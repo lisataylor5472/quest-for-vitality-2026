@@ -3,10 +3,14 @@ import { ref } from 'vue'
 import CampaignComponent from '@/components/CampaignComponent.vue'
 import LeaderboardComponent from '@/components/LeaderboardComponent.vue'
 import DungeonComponent from '@/components/DungeonComponent.vue'
+import { useGameStore } from '@/stores/game'
 
 type View = 'campaign' | 'leaderboard' | 'dungeon'
 
 const activeView = ref<View>('campaign')
+
+const gameStore = useGameStore()
+gameStore.fetchData()
 </script>
 
 <template lang="pug">
