@@ -20,7 +20,7 @@ gameStore.fetchData()
   .header-wrapper
     .header-stripe
     .header-banner
-      img.title-svg(src="@/assets/banner-updated.svg" alt="Title Banner")
+      img.title-svg(src="@/assets/Banner-updated.svg" alt="Title Banner")
     .header-details
       .flag-pole-wrapper
         .flag-pole
