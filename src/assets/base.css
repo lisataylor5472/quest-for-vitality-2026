@@ -1,0 +1,121 @@
+/* color palette from <https://github.com/vuejs/theme> */
+:root {
+  --theme-col-dark-blurple: #32366f;
+  --theme-col-blurple: #5555f2;
+  --theme-col-med-blurple: #a47cdb;
+  --theme-col-light-blurple: #d4bcfe;
+
+  --theme-col-dark-green: #005d20;
+  --theme-col-green: #29f36e;
+  --theme-col-med-green: #1fab4f;
+  --theme-col-ml-green: #93f7b6;
+  --theme-col-light-green: #d0ffe0;
+
+  --theme-col-dark-red: #dc4f2c;
+  --theme-col-red: #fc795c;
+  --theme-col-med-red: #fd8c77;
+  --theme-col-light-red: #fec5b2;
+
+  --theme-col-dark-yellow: #fcc036;
+  --theme-col-yellow: #eefd90;
+
+  --theme-col-dark-cyan: #00b8d4;
+  --theme-col-cyan: #00e5ff;
+
+  --theme-col-parchment: #f7e7d4;
+  --theme-col-parchment-med: #f7e7d4;
+  --theme-col-parchment-dark: #d9c0a1;
+  --theme-col-parchment-light: #fff5e9;
+
+  --theme-col-brown: #4b3c3c;
+  --theme-col-brown-light: #815f5f;
+
+  --theme-col-white: #ffffff;
+  --theme-col-white-soft: #f8f8f8;
+  --theme-col-white-mute: #f2f2f2;
+
+  --theme-col-black: #181818;
+  --theme-col-black-soft: #222222;
+  --theme-col-black-mute: #282828;
+
+  --vt-c-divider-light-1: rgba(46, 34, 34, 0.29);
+  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
+  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
+  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+
+  --vt-c-text-light-1: var(--theme-col-white);
+  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
+  --vt-c-text-dark-1: var(--vt-c-white);
+  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+}
+
+/* semantic color variables for this project */
+:root {
+  --color-background: var(--theme-col-dark-blurple);
+  /* --color-background-soft: var(--vt-c-white-soft);
+  --color-background-mute: var(--vt-c-white-mute); */
+
+  --color-border: var(--vt-c-divider-light-2);
+  --color-border-hover: var(--vt-c-divider-light-1);
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: var(--theme-col-black-mute);
+
+  --section-gap: 160px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  background-image: url('@/assets/grid.svg');
+  background-repeat: repeat;
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+  line-height: 1.6;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  font-size: 1.8rem;
+  color: var(--theme-col-blurple);
+  font-family: 'Pixelify Sans', sans-serif;
+}
+
+h2 {
+  font-size: 1.2rem;
+  color: var(--theme-col-blurple);
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+h3 {
+  font-size: 1.2rem;
+  color: var(--theme-col-black-mute);
+  font-family: 'Space Grotesk', sans-serif;
+}
