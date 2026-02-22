@@ -15,7 +15,7 @@
   }
   .app-wrapper {
     padding: 2rem 0 0 0;
-    max-width: 1800px;
+    width: 1100px;
     flex-grow: 2;
     // max-width: 1280px;
   }
@@ -25,6 +25,36 @@
     background-image: url('@/assets/wood-grain.svg');
     background-size: cover;
     background-position: center;
+  }
+  .c1 {
+    background-color: #96feda;
+    border: 1px solid #1fab4f;
+    color: #1fab4f;
+  }
+  .c2 {
+    background-color: #3df0fa;
+    border: 1px solid #17c2ce;
+    color: #17c2ce;
+  }
+  .c3 {
+    background-color: #17c2ce;
+    border: 1px solid #3df0fa;
+    color: #3df0fa;
+  }
+  .c4 {
+    background-color: #d4bcfe;
+    border: 1px solid #a47cdb;
+    color: #a47cdb;
+  }
+  .c5 {
+    background-color: #a47cdb;
+    border: 1px solid #d4bcfe;
+    color: #d4bcfe;
+  }
+  .c6 {
+    background-color: #fc795c;
+    border: 1px solid #fec5b2;
+    color: #fec5b2;
   }
 }
 

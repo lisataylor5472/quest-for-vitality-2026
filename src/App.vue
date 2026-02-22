@@ -29,10 +29,10 @@ gameStore.fetchData()
             img.flag-unrolled(v-if="true" src="@/assets/flags/flexibility-flag.svg" alt="Flexibility Dungeon Flag")
             img(v-else src="@/assets/flags/rolled-flag-flexibility.svg" alt="Flexibility Dungeon Flag")
           .adventure-flag
-            img.flag-unrolled(v-if="true" src="@/assets/flags/hydration-flag.svg" alt="Hydration Dungeon Flag")
+            img.flag-unrolled(v-if="false" src="@/assets/flags/hydration-flag.svg" alt="Hydration Dungeon Flag")
             img(v-else src="@/assets/flags/rolled-flag-hydration.svg" alt="Future Dungeon Flag")
           .adventure-flag
-            img.flag-unrolled(v-if="true" src="@/assets/flags/cardio-flag.svg" alt="Cardio Dungeon Flag")
+            img.flag-unrolled(v-if="false" src="@/assets/flags/cardio-flag.svg" alt="Cardio Dungeon Flag")
             img(v-else src="@/assets/flags/rolled-flag-cardio.svg" alt="Future Dungeon Flag")
           .adventure-flag
             img.flag-unrolled(v-if="false" src="@/assets/flags/sleep-flag.svg")
@@ -44,9 +44,9 @@ gameStore.fetchData()
             img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
-      button(@click="activeView = 'campaign'") campaign
-      button(@click="activeView = 'leaderboard'") leaderboard
-      button(@click="activeView = 'dungeon'") dungeon
+      button(@click="activeView = 'campaign'" :class="{ active: activeView === 'campaign' }") campaign
+      button(@click="activeView = 'leaderboard'" :class="{ active: activeView === 'leaderboard' }") leaderboard
+      button(@click="activeView = 'dungeon'" :class="{ active: activeView === 'dungeon' }") dungeon
   .main-content-wrapper
     .parchment-page
       CampaignComponent(v-show="activeView === 'campaign'")
@@ -59,51 +59,53 @@ gameStore.fetchData()
 <style lang="scss" scoped>
 .nav-button-wrapper {
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding-left: 20em;
+  // background-color: var(--theme-col-parchment);
+  // border-radius: 20px;
+  // border: 3px solid #a59696;
+  padding: 0.25rem 1rem;
+  height: 3.5rem;
   margin-bottom: 0.5em;
+  margin-left: 10em;
+
   button {
-    border-radius: 37px;
-    border: 2px solid #29f36e;
-    width: 150px;
+    border: 2px solid var(--theme-col-blurple);
+    width: 130px;
     height: 35px;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-family: 'Grenze Gotisch', serif;
     display: flex;
     justify-content: center;
-    margin-left: 1rem;
     align-items: center;
     padding-bottom: 4px;
     cursor: pointer;
     transition:
-      transform 0.12s ease,
-      box-shadow 0.2s ease,
-      background 0.15s ease,
-      color 0.15s ease;
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+
     &:not(.active) {
-      background: #d0ffe0;
-      color: #2d864c;
-      box-shadow: 2px 2px 0px 1px #29f36e;
+      background: #d0d6ff;
+      color: var(--theme-col-blurple);
+      box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
     }
-    a {
-      text-decoration: none;
-      color: #005d20;
+
+    &.active {
+      background: var(--theme-col-blurple);
+      color: #fff;
+      box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
     }
-    &:hover {
-      background: #0d2118;
-      color: #d0ffe0;
-      box-shadow:
-        0 0 4px 1px #29f36e,
-        0 0 12px 3px #29f36e,
-        0 0 22px 5px var(--theme-col-med-blurple);
-      animation: btn-glow-pulse 1.6s ease-in-out infinite;
+
+    &:hover:not(.active) {
+      background: var(--theme-col-lightest-blurple);
     }
-    &:active {
-      transform: scale(0.93) translateY(2px);
-      box-shadow:
-        0 0 4px 1px #29f36e,
-        inset 0 2px 6px rgba(0, 0, 0, 0.35);
-      animation: none;
+
+    &:first-of-type {
+      border-radius: 37px 0 0 37px;
+    }
+
+    &:last-of-type {
+      border-radius: 0 37px 37px 0;
     }
   }
 }
@@ -234,7 +236,7 @@ gameStore.fetchData()
   }
 }
 .main-content-wrapper {
-  height: 75vh;
+  height: 72vh;
   padding: 0.5em 2em;
   .parchment-page {
     width: 100%;

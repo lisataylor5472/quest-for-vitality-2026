@@ -55,8 +55,8 @@ function resetSort() {
 }
 
 function sortIcon(key: SortKey) {
-  if (sortKey.value !== key) return '[-]'
-  return sortDir.value === 'desc' ? '⌄' : '⌃'
+  if (sortKey.value !== key) return 'unfold_more'
+  return sortDir.value === 'desc' ? 'expand_more' : 'expand_less'
 }
 
 // ---------------------------------------------------------------------------
@@ -81,62 +81,97 @@ const displayedPlayers = computed(() => {
   p.loading(v-if="store.loading") Loading...
   p.error(v-else-if="store.error") {{ store.error }}
   .table-scroll-wrapper(v-else)
-    table.leaderboard-table
-      thead
-        tr
-          th.rank-col.sortable(
-            :class="{ active: sortKey === null }"
-            @click="resetSort"
-            title="Default ranking"
-          ) #
-          th
-          th Player
-          th Class
-          th HP
-          th.sortable(
-            :class="{ active: sortKey === 'level' }"
-            @click="setSort('level')"
-          ) Lvl {{ sortIcon('level') }}
-          th Lvl Progress
-          th.sortable(
-            :class="{ active: sortKey === 'totalXp' }"
-            @click="setSort('totalXp')"
-          ) total XP {{ sortIcon('totalXp') }}
-          th Weeks Won
-          th.sortable(
-            :class="{ active: sortKey === 'totalActiveDays' }"
-            @click="setSort('totalActiveDays')"
-          ) Active Days {{ sortIcon('totalActiveDays') }}
-          th.sortable(
-            :class="{ active: sortKey === 'achievements' }"
-            @click="setSort('achievements')"
-          ) Achievements {{ sortIcon('achievements') }}
-      tbody
-        tr(v-for="(player, index) in displayedPlayers" :key="player.playerId")
-          td.rank {{ index + 1 }}
-          td.avatar-cell
-            img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
-          td.player-name
-            span.char-name {{ player.charName }}
-            span.real-name {{ player.realName }}
-          td {{ player.class }}
-          td.hp {{ player.hp }} / {{ player.maxHp }}
-          td {{ player.level }}
-          td.level-progress-cell
-            .level-progress-labels
-              //- span.lv-current Lv {{ player.level }}
-              span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
-            .level-progress-track
-              .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
-          td {{ player.totalXp }}
-          td {{ player.weekWins }}
-          td {{ player.totalActiveDays }}
-          td {{ achievementCount(player.achievements) }}
+    .table-header-area
+      table.leaderboard-table
+        colgroup
+          col(style="width:2.5rem")
+          col(style="width:4rem")
+          col
+          col(style="width:6rem")
+          col(style="width:5rem")
+          col(style="width:4rem")
+          col(style="width:9.5rem")
+          col(style="width:5.5rem")
+          col(style="width:5.5rem")
+          col(style="width:5.5rem")
+          col(style="width:8rem")
+        thead
+          tr
+            th.rank-col.sortable(
+              :class="{ active: sortKey === null }"
+              @click="resetSort"
+              title="Default ranking"
+            ) Rank
+            th
+            th.player-col Player
+            th Class
+            th HP
+            th.sortable(
+              :class="{ active: sortKey === 'level' }"
+              @click="setSort('level')"
+            )
+              | Lvl
+              span.material-icons.sort-icon {{ sortIcon('level') }}
+            th Lvl Progress
+            th.sortable(
+              :class="{ active: sortKey === 'totalXp' }"
+              @click="setSort('totalXp')"
+            )
+              | total XP
+              span.material-icons.sort-icon {{ sortIcon('totalXp') }}
+            th Weeks Won
+            th.sortable(
+              :class="{ active: sortKey === 'totalActiveDays' }"
+              @click="setSort('totalActiveDays')"
+            )
+              | Active Days
+              span.material-icons.sort-icon {{ sortIcon('totalActiveDays') }}
+            th.sortable(
+              :class="{ active: sortKey === 'achievements' }"
+              @click="setSort('achievements')"
+            )
+              | Achievements
+              span.material-icons.sort-icon {{ sortIcon('achievements') }}
+    .table-body-area
+      table.leaderboard-table
+        colgroup
+          col(style="width:2.5rem")
+          col(style="width:4rem")
+          col
+          col(style="width:6rem")
+          col(style="width:5rem")
+          col(style="width:4rem")
+          col(style="width:9.5rem")
+          col(style="width:5.5rem")
+          col(style="width:5.5rem")
+          col(style="width:5.5rem")
+          col(style="width:8rem")
+        tbody
+          tr(v-for="(player, index) in displayedPlayers" :key="player.playerId")
+            td.rank {{ index + 1 }}
+            td.avatar-cell
+              img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
+            td.player-name
+              span.char-name {{ player.charName }}
+              span.real-name {{ player.realName }}
+            td.class-name {{ player.class }}
+            td.hp {{ player.hp }} / {{ player.maxHp }}
+            td.level-num {{ player.level }}
+            td.level-progress-cell
+              .level-progress-labels
+                //- span.lv-current Lv {{ player.level }}
+                span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
+              .level-progress-track
+                .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
+            td {{ player.totalXp }}
+            td {{ player.weekWins }}
+            td {{ player.totalActiveDays }}
+            td {{ achievementCount(player.achievements) }}
 </template>
 
 <style lang="scss" scoped>
 .leaderboard-component {
-  padding: 2rem;
+  padding: 2rem 1.25rem 2rem 0rem;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -145,6 +180,20 @@ const displayedPlayers = computed(() => {
 }
 
 .table-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  width: 90%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-header-area {
+  flex-shrink: 0;
+}
+
+.table-body-area {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -163,20 +212,24 @@ const displayedPlayers = computed(() => {
 
 .leaderboard-table {
   width: 100%;
-  border-collapse: collapse;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 3px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.9rem;
 
   thead tr {
-    position: sticky;
-    top: 0;
-    // background-color: var(--theme-col-brown);
-    // color: var(--theme-col-parchment-light);
-    // background-color: var(--theme-col-parchment-light);
-    background-color: var(--theme-col-parchment);
-    color: var(--theme-col-dark-red);
-    text-align: left;
-    border-bottom: 2px solid var(--theme-col-dark-red);
+    background-color: var(--theme-col-blurple);
+    color: var(--theme-col-parchment-light);
+    text-align: center;
+
+    th:first-child {
+      border-radius: 10px 0 0 10px;
+    }
+
+    th:last-child {
+      border-radius: 0 10px 10px 0;
+    }
   }
 
   th {
@@ -188,24 +241,21 @@ const displayedPlayers = computed(() => {
     font-size: 1.2rem;
     white-space: nowrap;
     user-select: none;
+    // background-color: var(--theme-col-light-red);
 
     &.sortable {
       cursor: pointer;
+    }
 
-      &:hover {
-        background-color: var(--theme-col-brown-light);
-      }
-
-      &.active {
-        background-color: var(--theme-col-dark-red);
-        color: var(--theme-col-parchment-light);
-      }
+    .sort-icon {
+      font-size: 1rem;
+      vertical-align: middle;
+      margin-left: 2px;
     }
   }
 
   tbody tr {
     background-color: var(--theme-col-parchment-light);
-    border-bottom: 1px solid var(--theme-col-parchment-dark);
 
     &:nth-child(even) {
       background-color: rgba(0, 0, 0, 0.04);
@@ -214,11 +264,20 @@ const displayedPlayers = computed(() => {
     &:hover {
       background-color: var(--theme-col-lightest-blurple);
     }
+
+    td:first-child {
+      border-radius: 10px 0 0 10px;
+    }
+
+    td:last-child {
+      border-radius: 0 10px 10px 0;
+    }
   }
 
   td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.5rem;
     vertical-align: middle;
+    text-align: center;
   }
 }
 
@@ -234,7 +293,7 @@ const displayedPlayers = computed(() => {
 }
 
 .avatar-cell {
-  width: 4rem;
+  width: 3rem;
   padding: 0.35rem 0.5rem;
 }
 
@@ -245,6 +304,11 @@ const displayedPlayers = computed(() => {
   object-fit: contain;
 }
 
+.player-col,
+td.player-name {
+  text-align: left;
+}
+
 .player-name {
   display: flex;
   flex-direction: column;
@@ -252,13 +316,25 @@ const displayedPlayers = computed(() => {
 }
 
 .char-name {
+  // font-family: 'Pixelify Sans', sans-serif;
   font-weight: 600;
-  color: var(--theme-col-dark-blurple);
+  font-size: 1.1em;
+  color: var(--theme-col-blurple);
 }
 
 .real-name {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--theme-col-brown-light);
+}
+
+.class-name {
+  font-weight: 700;
+}
+
+.level-num {
+  font-weight: 600;
+  font-size: 1.2em;
+  color: var(--theme-col-blurple);
 }
 
 .hp {
@@ -266,7 +342,7 @@ const displayedPlayers = computed(() => {
 }
 
 .level-progress-cell {
-  min-width: 140px;
+  min-width: 160px;
 }
 
 .level-progress-labels {
@@ -288,17 +364,31 @@ const displayedPlayers = computed(() => {
 }
 
 .level-progress-track {
-  height: 8px;
-  background: var(--theme-col-parchment-dark);
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid var(--theme-col-brown-light);
+  // height: 10px;
+  // background: var(--theme-col-parchment-dark);
+  // border-radius: 4px;
+  // overflow: hidden;
+  // border: 1px solid var(--theme-col-brown-light);
+  background-color: var(--theme-col-parchment-dark);
+  height: 1em;
+  width: 100%;
+  border-radius: 0.5em;
+  margin-top: 0.5em;
+  box-shadow: inset 3px 3px 0em 1px var(--theme-col-brown-light);
 }
 
 .level-progress-fill {
   height: 100%;
-  background: linear-gradient(to right, var(--theme-col-blurple), var(--theme-col-med-blurple));
-  border-radius: 4px;
-  transition: width 0.4s ease;
+  background-color: var(--theme-col-green);
+  height: 100%;
+  width: 0%;
+  border-radius: 0.5em;
+  box-shadow: inset -2px -2px 0em 1px var(--theme-col-ml-green);
+  // background:
+  //   linear-gradient(to bottom, rgba(255, 255, 255, 0.35) 0%, rgba(0, 0, 0, 0.15) 100%),
+  //   linear-gradient(to right, var(--theme-col-med-green), var(--theme-col-green));
+  // border-radius: 4px;
+  // box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+  // transition: width 0.4s ease;
 }
 </style>

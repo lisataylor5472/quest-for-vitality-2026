@@ -27,11 +27,17 @@ export interface Campaign {
   id: string
   name: string
   theme: string
+  questAction: string
   timesPerWeek: number
   successThreshold: number
   enemy: string
+  enemyImg: string
   enemyHp: string | number
+  enemyMaxHp: string | number
   enemyProg: string | number
+  enemySpeed: string | number
+  enemyDmg: string | number
+  reward: string
   start: string // ISO date string
   end: string // ISO date string
   days: number
