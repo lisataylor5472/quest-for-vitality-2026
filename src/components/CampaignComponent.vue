@@ -163,6 +163,7 @@ const displayedRows = computed(() => {
             .qi-row.qi-row--stacked
               span.qi-label Reward
               span.qi-value {{ campaignC1.reward }}
+              span.qi-desc(v-if="campaignC1.rewardDesc") {{ campaignC1.rewardDesc }}
             .qi-row
               span.qi-label Threat
               span.qi-value {{ campaignC1.enemy }}
@@ -340,6 +341,16 @@ const displayedRows = computed(() => {
 .qi-value {
   font-weight: 600;
   color: var(--theme-col-brown);
+}
+
+.qi-desc {
+  font-size: 0.72rem;
+  color: var(--theme-col-brown-light);
+  font-style: italic;
+  line-height: 1.3;
+  margin-top: 0.1rem;
+  align-self: center;
+  text-align: center;
 }
 
 .qi-enemy-block {
