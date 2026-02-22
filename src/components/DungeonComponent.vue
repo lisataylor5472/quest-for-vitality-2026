@@ -2,11 +2,15 @@
 
 <template lang="pug">
 .dungeon-component
-  p Dungeon Component
+  h1 Under Construction
 </template>
 
 <style lang="scss" scoped>
 .dungeon-component {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 1rem;
 }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/game'
+import MagicLoader from '@/components/MagicLoader.vue'
 
 const store = useGameStore()
 
@@ -122,17 +123,22 @@ const displayedRows = computed(() => {
 
 <template lang="pug">
 .campaigns-component
-  p.loading(v-if="store.loading") Loading...
+  MagicLoader(v-if="store.loading")
   p.error(v-else-if="store.error") {{ store.error }}
   .content-layout(v-else)
     .top-bar
       .campaigns-button-wrapper
-        button.active.c1 Flexibility
-        button.c2 . . .
-        button.c3 . . .
-        button.c4 . . .
-        button.c5 . . .
-        button.c6 . . .
+        button.c1 Flexibility
+        button.active.c2
+          span.material-icons hourglass_empty
+        button.active.c3
+          span.material-icons hourglass_empty
+        button.active.c4
+          span.material-icons hourglass_empty
+        button.active.c5
+          span.material-icons hourglass_empty
+        button.active.c6
+          span.material-icons hourglass_empty
     .main-row
       .side-panel
         .quest-info-wrapper(v-if="campaignC1")
@@ -160,17 +166,18 @@ const displayedRows = computed(() => {
             .qi-row
               span.qi-label Threat
               span.qi-value {{ campaignC1.enemy }}
-            .qi-row
+            .qi-enemy-block
               img.qi-enemy-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
-            .qi-row
-              span.qi-label HP
-              span.qi-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
-            .qi-row
-              span.qi-label Speed
-              span.qi-value {{ campaignC1.enemySpeed }}% per week
-            .qi-row
-              span.qi-label Dmg
-              span.qi-value {{ campaignC1.enemyDmg }}
+              .qi-enemy-stats
+                .qi-row.qi-row--stacked
+                  span.qi-label HP
+                  span.qi-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
+                //- .qi-row.qi-row--stacked
+                //-   span.qi-label Speed
+                //-   span.qi-value {{ campaignC1.enemySpeed }}% per week
+                .qi-row.qi-row--stacked
+                  span.qi-label Dmg
+                  span.qi-value {{ campaignC1.enemyDmg }}
 
 
       .table-scroll-wrapper
@@ -292,21 +299,6 @@ const displayedRows = computed(() => {
   background-color: var(--theme-col-parchment-dark);
 }
 
-.qi-enemy-img {
-  width: 100%;
-  max-height: 10rem;
-  object-fit: contain;
-  object-position: center;
-}
-
-.qi-enemy-name {
-  font-family: 'Grenze Gotisch', serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--theme-col-brown);
-  margin-top: 0.25rem;
-}
-
 .qi-body {
   padding: 0.75rem 1.25rem;
   display: flex;
@@ -348,6 +340,54 @@ const displayedRows = computed(() => {
 .qi-value {
   font-weight: 600;
   color: var(--theme-col-brown);
+}
+
+.qi-enemy-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--theme-col-parchment-dark);
+}
+
+.qi-enemy-img {
+  flex: 0 0 auto;
+  width: 12rem;
+  max-height: 16rem;
+  object-fit: contain;
+  object-position: center;
+}
+
+.qi-enemy-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  .qi-row {
+    border-bottom: 1px solid var(--theme-col-parchment-dark);
+    padding-bottom: 0.3rem;
+
+    &.qi-row--stacked {
+      qi-value {
+        justify-content: left;
+      }
+    }
+
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+  }
+}
+
+.qi-enemy-name {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--theme-col-brown);
+  margin-top: 0.25rem;
 }
 
 .table-scroll-wrapper {

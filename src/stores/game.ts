@@ -99,7 +99,7 @@ export const useGameStore = defineStore('game', () => {
       dashboard.value = data.dashboard
       classes.value = data.classes
       campaigns.value = data.campaigns
-      players.value = data.players
+      players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
       plyrActivity.value = data.plyrActivity
       achievements.value = data.achievements

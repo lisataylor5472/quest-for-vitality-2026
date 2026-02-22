@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/game'
+import MagicLoader from '@/components/MagicLoader.vue'
 
 const store = useGameStore()
 
@@ -78,95 +79,70 @@ const displayedPlayers = computed(() => {
 
 <template lang="pug">
 .leaderboard-component
-  p.loading(v-if="store.loading") Loading...
+  MagicLoader(v-if="store.loading")
   p.error(v-else-if="store.error") {{ store.error }}
   .table-scroll-wrapper(v-else)
-    .table-header-area
-      table.leaderboard-table
-        colgroup
-          col(style="width:2.5rem")
-          col(style="width:4rem")
-          col
-          col(style="width:6rem")
-          col(style="width:5rem")
-          col(style="width:4rem")
-          col(style="width:9.5rem")
-          col(style="width:5.5rem")
-          col(style="width:5.5rem")
-          col(style="width:5.5rem")
-          col(style="width:8rem")
-        thead
-          tr
-            th.rank-col.sortable(
-              :class="{ active: sortKey === null }"
-              @click="resetSort"
-              title="Default ranking"
-            ) Rank
-            th
-            th.player-col Player
-            th Class
-            th HP
-            th.sortable(
-              :class="{ active: sortKey === 'level' }"
-              @click="setSort('level')"
-            )
-              | Lvl
-              span.material-icons.sort-icon {{ sortIcon('level') }}
-            th Lvl Progress
-            th.sortable(
-              :class="{ active: sortKey === 'totalXp' }"
-              @click="setSort('totalXp')"
-            )
-              | total XP
-              span.material-icons.sort-icon {{ sortIcon('totalXp') }}
-            th Weeks Won
-            th.sortable(
-              :class="{ active: sortKey === 'totalActiveDays' }"
-              @click="setSort('totalActiveDays')"
-            )
-              | Active Days
-              span.material-icons.sort-icon {{ sortIcon('totalActiveDays') }}
-            th.sortable(
-              :class="{ active: sortKey === 'achievements' }"
-              @click="setSort('achievements')"
-            )
-              | Achievements
-              span.material-icons.sort-icon {{ sortIcon('achievements') }}
-    .table-body-area
-      table.leaderboard-table
-        colgroup
-          col(style="width:2.5rem")
-          col(style="width:4rem")
-          col
-          col(style="width:6rem")
-          col(style="width:5rem")
-          col(style="width:4rem")
-          col(style="width:9.5rem")
-          col(style="width:5.5rem")
-          col(style="width:5.5rem")
-          col(style="width:5.5rem")
-          col(style="width:8rem")
-        tbody
-          tr(v-for="(player, index) in displayedPlayers" :key="player.playerId")
-            td.rank {{ index + 1 }}
-            td.avatar-cell
-              img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
-            td.player-name
-              span.char-name {{ player.charName }}
-              span.real-name {{ player.realName }}
-            td.class-name {{ player.class }}
-            td.hp {{ player.hp }} / {{ player.maxHp }}
-            td.level-num {{ player.level }}
-            td.level-progress-cell
-              .level-progress-labels
-                //- span.lv-current Lv {{ player.level }}
-                span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
-              .level-progress-track
-                .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
-            td {{ player.totalXp }}
-            td {{ player.weekWins }}
-            td {{ player.totalActiveDays }}
-            td {{ achievementCount(player.achievements) }}
+    table.leaderboard-table
+      thead
+        tr
+          th.rank-col.sortable(
+            :class="{ active: sortKey === null }"
+            @click="resetSort"
+            title="Default ranking"
+          )
+            | Rank
+            span.material-icons.sort-icon {{ sortIcon() }}
+          th
+          th.player-col Player
+          th Class
+          th HP
+          th.sortable(
+            :class="{ active: sortKey === 'level' }"
+            @click="setSort('level')"
+          )
+            | Lvl
+            span.material-icons.sort-icon {{ sortIcon('level') }}
+          th Lvl Progress
+          th.sortable(
+            :class="{ active: sortKey === 'totalXp' }"
+            @click="setSort('totalXp')"
+          )
+            | total XP
+            span.material-icons.sort-icon {{ sortIcon('totalXp') }}
+          th Weeks Won
+          th.sortable(
+            :class="{ active: sortKey === 'totalActiveDays' }"
+            @click="setSort('totalActiveDays')"
+          )
+            | Active Days
+            span.material-icons.sort-icon {{ sortIcon('totalActiveDays') }}
+          th.sortable(
+            :class="{ active: sortKey === 'achievements' }"
+            @click="setSort('achievements')"
+          )
+            | Achievements
+            span.material-icons.sort-icon {{ sortIcon('achievements') }}
+      tbody
+        tr(v-for="(player, index) in displayedPlayers" :key="player.playerId")
+          td.rank {{ index + 1 }}
+          td.avatar-cell
+            img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
+          td.player-name
+            span.char-name {{ player.charName }}
+            span.real-name {{ player.realName }}
+          td.class-name {{ player.class }}
+          td.hp {{ player.hp }} / {{ player.maxHp }}
+          td.level-num {{ player.level }}
+          td.level-progress-cell
+            .level-progress-labels
+              //- span.lv-current Lv {{ player.level }}
+              span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
+            .level-progress-track
+              .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
+          td {{ player.totalXp }}
+          td {{ player.weekWins }}
+          td {{ player.totalActiveDays }}
+          td {{ achievementCount(player.achievements) }}
 </template>
 
 <style lang="scss" scoped>
@@ -182,43 +158,28 @@ const displayedPlayers = computed(() => {
 .table-scroll-wrapper {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   width: 90%;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
 }
 
-.table-header-area {
-  flex-shrink: 0;
-}
-
-.table-body-area {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.loading,
 .error {
   text-align: center;
   padding: 2rem;
   font-family: 'Space Grotesk', sans-serif;
-}
-
-.error {
   color: var(--theme-col-dark-red);
 }
 
 .leaderboard-table {
   width: 100%;
-  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0 3px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.9rem;
 
   thead tr {
+    position: sticky;
+    top: 0;
     background-color: var(--theme-col-blurple);
     color: var(--theme-col-parchment-light);
     text-align: center;

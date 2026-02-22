@@ -61,19 +61,15 @@ gameStore.fetchData()
   display: flex;
   align-items: center;
   justify-content: center;
-  // background-color: var(--theme-col-parchment);
-  // border-radius: 20px;
-  // border: 3px solid #a59696;
   padding: 0.25rem 1rem;
-  height: 3.5rem;
+  height: 4rem;
   margin-bottom: 0.5em;
-  margin-left: 10em;
+  margin-left: 12em;
 
   button {
     border: 2px solid var(--theme-col-blurple);
-    width: 130px;
-    height: 35px;
-    font-size: 1.3rem;
+    width: 150px;
+    font-size: 1.4rem;
     font-family: 'Grenze Gotisch', serif;
     display: flex;
     justify-content: center;
