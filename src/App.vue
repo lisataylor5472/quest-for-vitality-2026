@@ -4,6 +4,7 @@ import CampaignComponent from '@/components/CampaignComponent.vue'
 import LeaderboardComponent from '@/components/LeaderboardComponent.vue'
 import DungeonComponent from '@/components/DungeonComponent.vue'
 import { useGameStore } from '@/stores/game'
+import MagicLoader from '@/components/MagicLoader.vue'
 
 type View = 'campaign' | 'leaderboard' | 'dungeon'
 
@@ -49,9 +50,11 @@ gameStore.fetchData()
       button(@click="activeView = 'dungeon'" :class="{ active: activeView === 'dungeon' }") dungeon
   .main-content-wrapper
     .parchment-page
-      CampaignComponent(v-show="activeView === 'campaign'")
-      LeaderboardComponent(v-show="activeView === 'leaderboard'")
-      DungeonComponent(v-show="activeView === 'dungeon'")
+      .loading-wrapper
+        MagicLoader
+      //- CampaignComponent(v-show="activeView === 'campaign'")
+      //- LeaderboardComponent(v-show="activeView === 'leaderboard'")
+      //- DungeonComponent(v-show="activeView === 'dungeon'")
 
 .right-panel
 </template>
@@ -234,12 +237,20 @@ gameStore.fetchData()
 .main-content-wrapper {
   height: 72vh;
   padding: 0.5em 2em;
+
   .parchment-page {
     width: 100%;
     height: 100%;
     padding: 1em 5em 3em 3em;
     // padding-right: 5em;
     background-image: url('@/assets/parchment.svg'); /* Adjust path as needed */
+  }
+  .loading-wrapper {
+    margin-top: 10em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 }
 </style>
