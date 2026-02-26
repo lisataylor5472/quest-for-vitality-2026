@@ -45,16 +45,16 @@ gameStore.fetchData()
             img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
-      button(@click="activeView = 'campaign'" :class="{ active: activeView === 'campaign' }") campaign
       button(@click="activeView = 'leaderboard'" :class="{ active: activeView === 'leaderboard' }") leaderboard
+      button(@click="activeView = 'campaign'" :class="{ active: activeView === 'campaign' }") campaign
       button(@click="activeView = 'dungeon'" :class="{ active: activeView === 'dungeon' }") dungeon
   .main-content-wrapper
     .parchment-page
-      .loading-wrapper
-        MagicLoader
-      //- CampaignComponent(v-show="activeView === 'campaign'")
-      //- LeaderboardComponent(v-show="activeView === 'leaderboard'")
-      //- DungeonComponent(v-show="activeView === 'dungeon'")
+      //- .loading-wrapper
+        //- MagicLoader
+      CampaignComponent(v-show="activeView === 'campaign'")
+      LeaderboardComponent(v-show="activeView === 'leaderboard'")
+      DungeonComponent(v-show="activeView === 'dungeon'")
 
 .right-panel
 </template>

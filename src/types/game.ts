@@ -49,6 +49,14 @@ export interface Campaign {
   week4: string
 }
 
+export interface Achievement {
+  id: string
+  tier: number
+  achievement: string
+  icon: string
+  type: string
+}
+
 export interface Player {
   playerId: string
   realName: string
@@ -57,11 +65,12 @@ export interface Player {
   class: string
   hp: number
   maxHp: number
-  weekWins: number
+  weekWins: number | string
   totalXp: number
   level: number
-  achievements: string
+  achievements: number
   totalActiveDays: number
+  [key: string]: unknown // achievement boolean columns (e.g. "create-char": true)
 }
 
 // Campaign-specific progress row, keyed to a specific campaign table (e.g. cmpgn1).
@@ -90,7 +99,7 @@ export interface ApiResponse {
   classes: GameClass[]
   campaigns: Campaign[]
   players: Player[]
-  achievements: unknown[]
+  achievements: Achievement[]
   cmpgn1: CampaignProgress[]
   plyrActivity: PlayerActivity[]
 }

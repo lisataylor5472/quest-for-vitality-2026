@@ -1,8 +1,10 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import MagicLoader from '@/components/MagicLoader.vue'
+</script>
 
 <template lang="pug">
 .dungeon-component
-  h1 Under Construction
+  MagicLoader(text="Soon to be Unveiled")
 </template>
 
 <style lang="scss" scoped>

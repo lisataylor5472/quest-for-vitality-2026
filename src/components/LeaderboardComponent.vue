@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/game'
+import type { Player } from '@/types/game'
 import MagicLoader from '@/components/MagicLoader.vue'
 
 const store = useGameStore()
@@ -9,13 +10,17 @@ const store = useGameStore()
 // Avatar helper
 // ---------------------------------------------------------------------------
 function avatarSrc(img: string) {
-  if (!img) return new URL('../assets/avatars/default.svg', import.meta.url).href
+  if (!img) return new URL('../assets/avatars/default.png', import.meta.url).href
   return new URL(`../assets/avatars/${img}`, import.meta.url).href
 }
 
-function achievementCount(achievements: string): number {
-  if (!achievements || typeof achievements !== 'string') return 0
-  return achievements.split(',').filter(Boolean).length
+function achievementIconSrc(icon: string) {
+  return new URL(`../assets/achievements/${icon}`, import.meta.url).href
+}
+
+// Returns the list of Achievement objects the player has earned
+function playerAchievements(player: Player) {
+  return store.achievements.filter((a) => player[a.id] === true)
 }
 
 // ---------------------------------------------------------------------------
@@ -30,6 +35,15 @@ function xpLevelProgress(totalXp: number): number {
 
 function xpIntoLevel(totalXp: number): number {
   return totalXp % XP_PER_LEVEL
+}
+
+// ---------------------------------------------------------------------------
+// Expandable rows
+// ---------------------------------------------------------------------------
+const expandedPlayerId = ref<string | null>(null)
+
+function toggleExpand(playerId: string) {
+  expandedPlayerId.value = expandedPlayerId.value === playerId ? null : playerId
 }
 
 // ---------------------------------------------------------------------------
@@ -55,8 +69,8 @@ function resetSort() {
   sortDir.value = 'desc'
 }
 
-function sortIcon(key: SortKey) {
-  if (sortKey.value !== key) return 'unfold_more'
+function sortIcon(key?: SortKey) {
+  if (key === undefined || sortKey.value !== key) return 'unfold_more'
   return sortDir.value === 'desc' ? 'expand_more' : 'expand_less'
 }
 
@@ -70,11 +84,13 @@ const displayedPlayers = computed(() => {
   const dir = sortDir.value === 'desc' ? -1 : 1
 
   return [...store.players].sort((a, b) => {
-    const aVal = key === 'achievements' ? achievementCount(a.achievements) : a[key]
-    const bVal = key === 'achievements' ? achievementCount(b.achievements) : b[key]
+    const aVal = key === 'achievements' ? (a.achievements as number) : (a[key] as number)
+    const bVal = key === 'achievements' ? (b.achievements as number) : (b[key] as number)
     return dir * (bVal - aVal)
   })
 })
+
+const TOTAL_COLS = 11
 </script>
 
 <template lang="pug">
@@ -123,26 +139,43 @@ const displayedPlayers = computed(() => {
             | Achievements
             span.material-icons.sort-icon {{ sortIcon('achievements') }}
       tbody
-        tr(v-for="(player, index) in displayedPlayers" :key="player.playerId")
-          td.rank {{ index + 1 }}
-          td.avatar-cell
-            img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
-          td.player-name
-            span.char-name {{ player.charName }}
-            span.real-name {{ player.realName }}
-          td.class-name {{ player.class }}
-          td.hp {{ player.hp }} / {{ player.maxHp }}
-          td.level-num {{ player.level }}
-          td.level-progress-cell
-            .level-progress-labels
-              //- span.lv-current Lv {{ player.level }}
-              span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
-            .level-progress-track
-              .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
-          td {{ player.totalXp }}
-          td {{ player.weekWins }}
-          td {{ player.totalActiveDays }}
-          td {{ achievementCount(player.achievements) }}
+        template(v-for="(player, index) in displayedPlayers" :key="player.playerId")
+          tr.player-row(
+            @click="toggleExpand(player.playerId)"
+            :class="{ 'is-expanded': expandedPlayerId === player.playerId, 'is-odd': index % 2 !== 0 }"
+          )
+            td.rank {{ index + 1 }}
+            td.avatar-cell
+              img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
+            td.player-name
+              span.char-name {{ player.charName }}
+              span.real-name {{ player.realName }}
+            td.class-name {{ player.class }}
+            td.hp {{ player.hp }} / {{ player.maxHp }}
+            td.level-num {{ player.level }}
+            td.level-progress-cell
+              .level-progress-labels
+                span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
+              .level-progress-track
+                .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
+            td {{ player.totalXp }}
+            td {{ player.weekWins }}
+            td {{ player.totalActiveDays }}
+            td.achievement-count {{ player.achievements }}
+          transition(name="expand")
+            tr.achievement-row(v-if="expandedPlayerId === player.playerId")
+              td.achievement-panel(:colspan="TOTAL_COLS")
+                .achievement-panel-inner
+                  .achievement-list(v-if="playerAchievements(player).length > 0")
+                    .achievement-badge(
+                      v-for="ach in playerAchievements(player)"
+                      :key="ach.id"
+                      :data-tooltip="ach.achievement"
+                      :class="`tier-${ach.tier}`"
+                    )
+                      img.achievement-icon(:src="achievementIconSrc(ach.icon)" :alt="ach.achievement")
+                  .achievement-empty(v-else)
+                    span No achievements yet
 </template>
 
 <style lang="scss" scoped>
@@ -196,13 +229,12 @@ const displayedPlayers = computed(() => {
   th {
     font-family: 'Grenze Gotisch', serif;
     padding: 0.25rem 0.5rem;
-    font-weight: 600;
+    // font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: lowercase;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     white-space: nowrap;
     user-select: none;
-    // background-color: var(--theme-col-light-red);
 
     &.sortable {
       cursor: pointer;
@@ -215,23 +247,54 @@ const displayedPlayers = computed(() => {
     }
   }
 
-  tbody tr {
-    background-color: var(--theme-col-parchment-light);
+  tbody {
+    .player-row {
+      background-color: var(--theme-col-parchment-light);
+      cursor: pointer;
+      transition: background-color 0.15s ease;
 
-    &:nth-child(even) {
-      background-color: rgba(0, 0, 0, 0.04);
+      &.is-odd {
+        background-color: var(--theme-col-parchment-med);
+      }
+
+      &:hover {
+        background-color: var(--theme-col-lightest-blue);
+      }
+
+      &.is-expanded {
+        background-color: var(--theme-col-lightest-blue);
+
+        td {
+          padding-bottom: 0;
+        }
+        td:first-child {
+          border-radius: 10px 0 0 0;
+        }
+        td:last-child {
+          border-radius: 0 10px 0 0;
+        }
+      }
+
+      &:not(.is-expanded) {
+        td:first-child {
+          border-radius: 10px 0 0 10px;
+        }
+        td:last-child {
+          border-radius: 0 10px 10px 0;
+        }
+      }
     }
 
-    &:hover {
-      background-color: var(--theme-col-lightest-blurple);
-    }
+    .achievement-row {
+      cursor: pointer;
 
-    td:first-child {
-      border-radius: 10px 0 0 10px;
-    }
-
-    td:last-child {
-      border-radius: 0 10px 10px 0;
+      .achievement-panel {
+        background-color: var(--theme-col-lightest-blue);
+        border-radius: 0 0 10px 10px;
+        padding: 0 1rem 0.2rem;
+        // paint upward into the border-spacing gap so the two rows look merged
+        box-shadow: 0 -3px 0 0 var(--theme-col-lightest-blue);
+      }
     }
   }
 
@@ -249,8 +312,11 @@ const displayedPlayers = computed(() => {
 
 .rank {
   font-weight: 700;
-  color: var(--theme-col-brown);
+  // color: var(--theme-col-brown);
+  color: var(--theme-col-dark-red);
   text-align: center;
+  font-size: 1.4em;
+  // background: var(--theme-col-light-red);
 }
 
 .avatar-cell {
@@ -277,7 +343,6 @@ td.player-name {
 }
 
 .char-name {
-  // font-family: 'Pixelify Sans', sans-serif;
   font-weight: 600;
   font-size: 1.1em;
   color: var(--theme-col-blurple);
@@ -313,43 +378,114 @@ td.player-name {
   margin-bottom: 4px;
 }
 
-.lv-current {
-  font-weight: 700;
-  color: var(--theme-col-dark-blurple);
-  letter-spacing: 0.03em;
-}
-
 .lv-xp {
   color: var(--theme-col-brown-light);
   font-variant-numeric: tabular-nums;
 }
 
 .level-progress-track {
-  // height: 10px;
-  // background: var(--theme-col-parchment-dark);
-  // border-radius: 4px;
-  // overflow: hidden;
-  // border: 1px solid var(--theme-col-brown-light);
   background-color: var(--theme-col-parchment-dark);
-  height: 1em;
+  height: 0.7em;
   width: 100%;
   border-radius: 0.5em;
-  margin-top: 0.5em;
-  box-shadow: inset 3px 3px 0em 1px var(--theme-col-brown-light);
+  // margin-top: 0.5em;
+  box-shadow: inset 2px 2px 0em 1px var(--theme-col-brown-light);
 }
 
 .level-progress-fill {
   height: 100%;
   background-color: var(--theme-col-green);
-  height: 100%;
   width: 0%;
   border-radius: 0.5em;
   box-shadow: inset -2px -2px 0em 1px var(--theme-col-ml-green);
-  // background:
-  //   linear-gradient(to bottom, rgba(255, 255, 255, 0.35) 0%, rgba(0, 0, 0, 0.15) 100%),
-  //   linear-gradient(to right, var(--theme-col-med-green), var(--theme-col-green));
-  // border-radius: 4px;
-  // box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 2px rgba(0, 0, 0, 0.2);
-  // transition: width 0.4s ease;
+}
+
+// ---------------------------------------------------------------------------
+// Achievement panel
+// ---------------------------------------------------------------------------
+.achievement-panel-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.achievement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 0 0.2em 0;
+}
+
+.achievement-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  padding: 0.25rem;
+  flex-shrink: 0;
+
+  // Tier 2 — default / blurple
+  &.tier-2 {
+    background-color: var(--theme-col-blurple);
+    border: 2px solid var(--theme-col-light-blurple);
+
+    .achievement-icon {
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  // Tier 1 — same as tier 2
+  &.tier-1 {
+    background-color: var(--theme-col-blurple);
+    border: 2px solid var(--theme-col-light-blurple);
+
+    .achievement-icon {
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  // Tier 3 — plain SVG, no badge styling
+  &.tier-3 {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+}
+
+.achievement-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.achievement-count {
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+}
+
+// ---------------------------------------------------------------------------
+// Expand / collapse transition
+// ---------------------------------------------------------------------------
+.expand-enter-active,
+.expand-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.achievement-empty {
+  font-size: 0.8rem;
+  color: var(--theme-col-brown-light);
+  font-style: italic;
+  padding: 0.25rem 0;
 }
 </style>

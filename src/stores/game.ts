@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type {
+  Achievement,
   ApiResponse,
   Campaign,
   CampaignProgress,
@@ -20,7 +21,7 @@ export const useGameStore = defineStore('game', () => {
   const players = ref<Player[]>([])
   const cmpgn1 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
-  const achievements = ref<unknown[]>([])
+  const achievements = ref<Achievement[]>([])
 
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -39,12 +40,6 @@ export const useGameStore = defineStore('game', () => {
     return campaigns.value.find((c) => c.id === id) ?? null
   })
 
-  /** Number of achievements a player has earned (achievements is a comma-separated string). */
-  function achievementCount(achievements: string): number {
-    if (!achievements || typeof achievements !== 'string') return 0
-    return achievements.split(',').filter(Boolean).length
-  }
-
   /**
    * Players sorted by the default ranking hierarchy:
    * totalXp → level → totalActiveDays → achievement count (all descending).
@@ -54,7 +49,7 @@ export const useGameStore = defineStore('game', () => {
       if (b.totalXp !== a.totalXp) return b.totalXp - a.totalXp
       if (b.level !== a.level) return b.level - a.level
       if (b.totalActiveDays !== a.totalActiveDays) return b.totalActiveDays - a.totalActiveDays
-      return achievementCount(b.achievements) - achievementCount(a.achievements)
+      return (b.achievements as number) - (a.achievements as number)
     }),
   )
 

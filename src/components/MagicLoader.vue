@@ -1,9 +1,12 @@
+<script setup lang="ts">
+withDefaults(defineProps<{ text?: string }>(), { text: 'Conjuring the data' })
+</script>
+
 <template lang="pug">
 .magic-loader
   .magic-orb
     span.spark(v-for="i in 8" :key="i" :style="`--i: ${i - 1}`")
-  //- h1.loading-text Conjuring the data
-  h1.loading-text The Quest for Vitality returns March 1...
+  h1.loading-text {{ text }}
 </template>
 
 <style lang="scss" scoped>

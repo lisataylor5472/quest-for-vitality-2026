@@ -9,7 +9,7 @@ const store = useGameStore()
 // Avatar helper (shared pattern with LeaderboardComponent)
 // ---------------------------------------------------------------------------
 function avatarSrc(img: string) {
-  if (!img) return new URL('../assets/avatars/default.svg', import.meta.url).href
+  if (!img) return new URL('../assets/avatars/default.png', import.meta.url).href
   return new URL(`../assets/avatars/${img}`, import.meta.url).href
 }
 
@@ -193,17 +193,17 @@ const displayedRows = computed(() => {
               ) Player
               th Class
               th.sortable(
-                :class="{ active: sortKey === 'cmpgnProgress' }"
-                @click="setSort('cmpgnProgress')"
-              )
-                | Success
-                span.material-icons.sort-icon {{ sortIcon('cmpgnProgress') }}
-              th.sortable(
                 :class="{ active: sortKey === 'dgnProgress' }"
                 @click="setSort('dgnProgress')"
               )
                 | Dungeon
                 span.material-icons.sort-icon {{ sortIcon('dgnProgress') }}
+              th.sortable(
+                :class="{ active: sortKey === 'cmpgnProgress' }"
+                @click="setSort('cmpgnProgress')"
+              )
+                | Success
+                span.material-icons.sort-icon {{ sortIcon('cmpgnProgress') }}
               th.sortable(
                 :class="{ active: sortKey === 'weeklyWinCount' }"
                 @click="setSort('weeklyWinCount')"
@@ -219,8 +219,8 @@ const displayedRows = computed(() => {
                 span.char-name {{ row.charName }}
                 span.real-name {{ row.realName }}
               td.class-name {{ row.class }}
-              td {{ row.cmpgnProgress }}%
               td {{ row.dgnProgress }}%
+              td {{ row.cmpgnProgress }}%
               td {{ row.weeklyWinCount }}
 
               td.activity-cell
@@ -228,7 +228,7 @@ const displayedRows = computed(() => {
                   span.day-box(
                     v-for="(day, i) in campaignDays"
                     :key="day"
-                    :title="formatDayTooltip(day)"
+                    :data-tooltip="formatDayTooltip(day)"
                     :class="{ active: activitySetByPlayer.get(row.playerId)?.has(day), 'week-gap': (i + 1) % 7 === 0 && i < campaignDays.length - 1 }"
                   )
 </template>
@@ -577,7 +577,7 @@ td.player-name {
   font-size: 0.7rem;
   line-height: 1;
   color: var(--theme-col-brown-light);
-  font-style: italic;
+  // font-style: italic;
 }
 
 .class-name {
@@ -611,7 +611,7 @@ td.player-name {
 
   &.active {
     background: var(--theme-col-green);
-    box-shadow: inset -1px -1px 0 0 var(--theme-col-ml-green);
+    // box-shadow: inset -1px -1px 0 0 var(--theme-col-ml-green);
   }
 
   &.week-gap {
