@@ -312,11 +312,10 @@ const TOTAL_COLS = 11
 
 .rank {
   font-weight: 700;
-  // color: var(--theme-col-brown);
+  font-family: 'Space Grotesk', serif;
   color: var(--theme-col-dark-red);
   text-align: center;
-  font-size: 1.4em;
-  // background: var(--theme-col-light-red);
+  font-size: 2em;
 }
 
 .avatar-cell {

@@ -128,7 +128,7 @@ const displayedRows = computed(() => {
   .content-layout(v-else)
     .top-bar
       .campaigns-button-wrapper
-        button.c1 Flexibility
+        button.c1 flexibility
         button.active.c2
           span.material-icons hourglass_empty
         button.active.c3
@@ -278,11 +278,12 @@ const displayedRows = computed(() => {
 }
 
 .qi-name {
-  font-family: 'Grenze Gotisch', serif;
+  font-family: 'Space Grotesk', serif;
   font-size: 1.3rem;
   font-weight: 700;
   margin: 0 0 0.15rem;
   line-height: 1.1;
+  letter-spacing: -0.05em;
 }
 
 .qi-theme {
@@ -418,7 +419,7 @@ const displayedRows = computed(() => {
 .campaigns-button-wrapper button {
   width: 10em;
   font-family: 'Grenze Gotisch', serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 0.35rem 1rem;
