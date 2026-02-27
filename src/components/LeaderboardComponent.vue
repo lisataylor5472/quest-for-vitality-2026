@@ -18,9 +18,19 @@ function achievementIconSrc(icon: string) {
   return new URL(`../assets/achievements/${icon}`, import.meta.url).href
 }
 
-// Returns the list of Achievement objects the player has earned
+// Returns the list of Achievement objects the player has earned,
+// with cX-complete achievements sorted to the end.
+const cCompletePattern = /^c\d+-complete$/
+
 function playerAchievements(player: Player) {
-  return store.achievements.filter((a) => player[a.id] === true)
+  return store.achievements
+    .filter((a) => player[a.id] === true)
+    .sort((a, b) => {
+      const aIsComplete = cCompletePattern.test(a.id)
+      const bIsComplete = cCompletePattern.test(b.id)
+      if (aIsComplete === bIsComplete) return 0
+      return aIsComplete ? 1 : -1
+    })
 }
 
 // ---------------------------------------------------------------------------
