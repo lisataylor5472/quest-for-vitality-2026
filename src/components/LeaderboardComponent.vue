@@ -35,9 +35,9 @@ function playerAchievements(player: Player) {
 
 // ---------------------------------------------------------------------------
 // Level progress bar helpers
-// XP per level = 200 (level 1 → 0 xp, level 2 → 200 xp, level 3 → 400 xp …)
+// XP per level = 400 (level 1 → 0 xp, level 2 → 400 xp, level 3 → 800 xp …)
 // ---------------------------------------------------------------------------
-const XP_PER_LEVEL = 200
+const XP_PER_LEVEL = 400
 
 function xpLevelProgress(totalXp: number): number {
   return ((totalXp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100
@@ -60,7 +60,7 @@ function toggleExpand(playerId: string) {
 // Sort state
 // null sortKey = use the store's default hierarchy sort
 // ---------------------------------------------------------------------------
-type SortKey = 'totalXp' | 'level' | 'totalActiveDays' | 'achievements'
+type SortKey = 'charName' | 'class' | 'totalXp' | 'level' | 'totalActiveDays' | 'achievements'
 
 const sortKey = ref<SortKey | null>(null)
 const sortDir = ref<'desc' | 'asc'>('desc')
@@ -93,6 +93,17 @@ const displayedPlayers = computed(() => {
   const key = sortKey.value
   const dir = sortDir.value === 'desc' ? -1 : 1
 
+  if (key === 'charName') {
+    const alpha = (s: string) => s.replace(/^[^\p{L}]+/u, '')
+    return [...store.players].sort(
+      (a, b) => dir * alpha(a.charName).localeCompare(alpha(b.charName)),
+    )
+  }
+
+  if (key === 'class') {
+    return [...store.players].sort((a, b) => dir * a.class.localeCompare(b.class))
+  }
+
   return [...store.players].sort((a, b) => {
     const aVal = key === 'achievements' ? (a.achievements as number) : (a[key] as number)
     const bVal = key === 'achievements' ? (b.achievements as number) : (b[key] as number)
@@ -114,37 +125,66 @@ const TOTAL_COLS = 11
           th.rank-col.sortable(
             :class="{ active: sortKey === null }"
             @click="resetSort"
-            title="Default ranking"
+            data-tooltip="Default ranking based on overall performance"
+            data-tooltip-pos="below"
           )
             | Rank
             span.material-icons.sort-icon {{ sortIcon() }}
           th
-          th.player-col Player
-          th Class
-          th HP
+          th.player-col.sortable(
+            :class="{ active: sortKey === 'charName' }"
+            @click="setSort('charName')"
+            data-tooltip="Character & real name"
+            data-tooltip-pos="below"
+          )
+            | Player
+            span.material-icons.sort-icon {{ sortIcon('charName') }}
+          th.sortable(
+            :class="{ active: sortKey === 'class' }"
+            @click="setSort('class')"
+            data-tooltip="Character class archetype"
+            data-tooltip-pos="below"
+          )
+            | Class
+            span.material-icons.sort-icon {{ sortIcon('class') }}
+          th(
+            data-tooltip="Current / max hit points"
+            data-tooltip-pos="below"
+          ) HP
           th.sortable(
             :class="{ active: sortKey === 'level' }"
             @click="setSort('level')"
+            data-tooltip="Current character level"
+            data-tooltip-pos="below"
           )
             | Lvl
             span.material-icons.sort-icon {{ sortIcon('level') }}
-          th Lvl Progress
+          th(
+            data-tooltip="XP progress toward the next level"
+            data-tooltip-pos="below"
+          ) Lvl Progress
           th.sortable(
             :class="{ active: sortKey === 'totalXp' }"
             @click="setSort('totalXp')"
+            data-tooltip="Total experience points earned"
+            data-tooltip-pos="below"
           )
             | total XP
             span.material-icons.sort-icon {{ sortIcon('totalXp') }}
-          th Weeks Won
+          th(
+            data-tooltip="Weeks where the weekly quest goal was met"
+            data-tooltip-pos="below"
+          ) Weeks Won
           th.sortable(
             :class="{ active: sortKey === 'totalActiveDays' }"
             @click="setSort('totalActiveDays')"
+            data-tooltip="Total days with logged workout activity"
+            data-tooltip-pos="below"
           )
             | Active Days
             span.material-icons.sort-icon {{ sortIcon('totalActiveDays') }}
           th.sortable(
             :class="{ active: sortKey === 'achievements' }"
-            @click="setSort('achievements')"
           )
             | Achievements
             span.material-icons.sort-icon {{ sortIcon('achievements') }}
@@ -165,7 +205,7 @@ const TOTAL_COLS = 11
             td.level-num {{ player.level }}
             td.level-progress-cell
               .level-progress-labels
-                span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 200
+                span.lv-xp {{ xpIntoLevel(player.totalXp) }} / 400
               .level-progress-track
                 .level-progress-fill(:style="{ width: `${xpLevelProgress(player.totalXp)}%` }")
             td {{ player.totalXp }}
@@ -223,6 +263,7 @@ const TOTAL_COLS = 11
   thead tr {
     position: sticky;
     top: 0;
+    z-index: 100;
     background-color: var(--theme-col-blurple);
     color: var(--theme-col-parchment-light);
     text-align: center;
@@ -369,11 +410,12 @@ td.player-name {
 .level-num {
   font-weight: 600;
   font-size: 1.2em;
-  color: var(--theme-col-blurple);
+  // color: var(--theme-col-blurple);
 }
 
 .hp {
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .level-progress-cell {
@@ -415,7 +457,7 @@ td.player-name {
 .achievement-panel-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: end;
   gap: 0.5rem;
 }
 

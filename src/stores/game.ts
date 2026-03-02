@@ -6,7 +6,7 @@ import type {
   Campaign,
   CampaignProgress,
   DashboardEntry,
-  GameClass,
+  ClassInfo,
   Player,
   PlayerActivity,
 } from '@/types/game'
@@ -16,7 +16,7 @@ export const useGameStore = defineStore('game', () => {
   // Raw state — mirrors the API response 1-to-1
   // ---------------------------------------------------------------------------
   const dashboard = ref<DashboardEntry[]>([])
-  const classes = ref<GameClass[]>([])
+  const classInfo = ref<ClassInfo[]>([])
   const campaigns = ref<Campaign[]>([])
   const players = ref<Player[]>([])
   const cmpgn1 = ref<CampaignProgress[]>([])
@@ -92,7 +92,7 @@ export const useGameStore = defineStore('game', () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: ApiResponse = await res.json()
       dashboard.value = data.dashboard
-      classes.value = data.classes
+      classInfo.value = data.classInfo
       campaigns.value = data.campaigns
       players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
@@ -111,7 +111,7 @@ export const useGameStore = defineStore('game', () => {
   return {
     // raw state
     dashboard,
-    classes,
+    classInfo,
     campaigns,
     players,
     cmpgn1,

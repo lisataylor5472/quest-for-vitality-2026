@@ -16,11 +16,15 @@ export interface DashboardEntry {
   cmpgnWeek: number | string // 1–4, or "" when not yet set
 }
 
-export interface GameClass {
-  className: string
-  vibe: string
-  ability1: string
-  ability2: string
+export interface ClassInfo {
+  class: string
+  ability1Cost: number
+  ability1Name: string
+  ability1Desc: string
+  ability1DescExpanded: string
+  ability2Cost: number
+  ability2Name: string
+  ability2Desc: string
 }
 
 export interface Campaign {
@@ -84,6 +88,7 @@ export interface CampaignProgress {
   w2Count: number
   w3Count: number
   w4Count: number
+  actionPoints: number
 }
 
 // Raw activity log row. Rows with an empty playerId are padding/rest days and
@@ -96,7 +101,7 @@ export interface PlayerActivity {
 
 export interface ApiResponse {
   dashboard: DashboardEntry[]
-  classes: GameClass[]
+  classInfo: ClassInfo[]
   campaigns: Campaign[]
   players: Player[]
   achievements: Achievement[]

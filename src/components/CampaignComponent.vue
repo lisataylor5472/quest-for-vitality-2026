@@ -29,6 +29,7 @@ type SortKey =
   | 'w2Count'
   | 'w3Count'
   | 'w4Count'
+  | 'actionPoints'
 
 const sortKey = ref<SortKey | null>(null)
 const sortDir = ref<'desc' | 'asc'>('asc')
@@ -112,7 +113,8 @@ const displayedRows = computed(() => {
     }))
 
   if (!sortKey.value) {
-    return [...rows].sort((a, b) => a.charName.localeCompare(b.charName))
+    const alpha = (s: string) => s.replace(/^[^\p{L}]+/u, '')
+    return [...rows].sort((a, b) => alpha(a.charName).localeCompare(alpha(b.charName)))
   }
 
   const key = sortKey.value
@@ -189,28 +191,47 @@ const displayedRows = computed(() => {
               th.player-col.sortable(
                 :class="{ active: sortKey === null }"
                 @click="resetSort"
-                title="Sort alphabetically"
               ) Player
-              th Class
+              th(
+                data-tooltip="Character class archetype"
+                data-tooltip-pos="below"
+              ) Class
               th.sortable(
                 :class="{ active: sortKey === 'dgnProgress' }"
                 @click="setSort('dgnProgress')"
+                data-tooltip="Overall dungeon progress percentage"
+                data-tooltip-pos="below"
               )
                 | Dungeon
                 span.material-icons.sort-icon {{ sortIcon('dgnProgress') }}
               th.sortable(
                 :class="{ active: sortKey === 'cmpgnProgress' }"
                 @click="setSort('cmpgnProgress')"
+                data-tooltip="Campaign quest completion rate"
+                data-tooltip-pos="below"
               )
                 | Success
                 span.material-icons.sort-icon {{ sortIcon('cmpgnProgress') }}
               th.sortable(
                 :class="{ active: sortKey === 'weeklyWinCount' }"
                 @click="setSort('weeklyWinCount')"
+                data-tooltip="Weeks where the weekly quest goal was met"
+                data-tooltip-pos="below"
               )
                 | Weeks Won
                 span.material-icons.sort-icon {{ sortIcon('weeklyWinCount') }}
-              th.activity-col Activity
+              th.sortable(
+                :class="{ active: sortKey === 'actionPoints' }"
+                @click="setSort('actionPoints')"
+                data-tooltip="Action Points — dungeon turns earned"
+                data-tooltip-pos="below"
+              )
+                span.material-icons.ap-icon campaign
+                span.material-icons.sort-icon {{ sortIcon('actionPoints') }}
+              th.activity-col(
+                data-tooltip="Daily workout activity log for this campaign"
+                data-tooltip-pos="below"
+              ) Activity
           tbody
             tr(v-for="row in displayedRows" :key="row.playerId")
               td.avatar-cell
@@ -222,6 +243,7 @@ const displayedRows = computed(() => {
               td {{ row.dgnProgress }}%
               td {{ row.cmpgnProgress }}%
               td {{ row.weeklyWinCount }}
+              td {{ row.actionPoints }}
 
               td.activity-cell
                 .activity-track
@@ -470,6 +492,7 @@ const displayedRows = computed(() => {
   thead tr {
     position: sticky;
     top: 0;
+    z-index: 100;
     background-color: var(--theme-col-blurple);
     color: var(--theme-col-lightest-blurple);
     text-align: center;
@@ -502,6 +525,11 @@ const displayedRows = computed(() => {
       font-size: 1rem;
       vertical-align: middle;
       margin-left: 2px;
+    }
+
+    .ap-icon {
+      font-size: 1.2rem;
+      vertical-align: middle;
     }
   }
 
@@ -549,13 +577,9 @@ const displayedRows = computed(() => {
 
 .avatar {
   display: block;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: top;
-  border: 2px solid var(--theme-col-parchment-dark);
-  background-color: var(--theme-col-parchment-med);
+  width: 2.6rem;
+  height: 2rem;
+  object-fit: contain;
 }
 
 .player-col,
@@ -570,7 +594,7 @@ td.player-name {
 .char-name {
   // margin-top: 5px;
   font-weight: 600;
-  font-size: 1.1em;
+  font-size: 1em;
   line-height: -1;
   color: var(--theme-col-blurple);
 }
@@ -605,7 +629,7 @@ td.player-name {
 
 .day-box {
   flex-shrink: 0;
-  width: 15px;
+  width: 10px;
   height: 15px;
   background: var(--theme-col-parchment-dark);
   border-radius: 2px;

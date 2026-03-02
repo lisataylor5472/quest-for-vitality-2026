@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import CampaignComponent from '@/components/CampaignComponent.vue'
 import LeaderboardComponent from '@/components/LeaderboardComponent.vue'
 import DungeonComponent from '@/components/DungeonComponent.vue'
@@ -12,6 +12,54 @@ const activeView = ref<View>('campaign')
 
 const gameStore = useGameStore()
 gameStore.fetchData()
+
+// ---------------------------------------------------------------------------
+// Global tooltip — position: fixed so it renders above scrollbars and outside
+// any overflow container. Reads the existing data-tooltip / data-tooltip-pos
+// attributes used throughout the app.
+// ---------------------------------------------------------------------------
+const tooltipEl = ref<HTMLElement | null>(null)
+let activeTarget: HTMLElement | null = null
+
+function onMouseOver(e: MouseEvent) {
+  const el = (e.target as HTMLElement).closest?.('[data-tooltip]') as HTMLElement | null
+  if (el === activeTarget) return
+  activeTarget = el
+  const tip = tooltipEl.value
+  if (!el || !tip) {
+    if (tip) tip.style.opacity = '0'
+    return
+  }
+  const text = el.getAttribute('data-tooltip')
+  if (!text) return
+
+  const below = el.getAttribute('data-tooltip-pos') === 'below'
+  const rect = el.getBoundingClientRect()
+  tip.textContent = text
+  tip.className = below ? 'below' : 'above'
+  tip.style.left = `${rect.left + rect.width / 2}px`
+  tip.style.top = below ? `${rect.bottom + 6}px` : `${rect.top - 6}px`
+  tip.style.transform = below ? 'translateX(-50%)' : 'translateX(-50%) translateY(-100%)'
+  tip.style.opacity = '1'
+}
+
+function onMouseOut(e: MouseEvent) {
+  if (!activeTarget) return
+  const rel = e.relatedTarget as HTMLElement | null
+  if (rel && activeTarget.contains(rel)) return
+  activeTarget = null
+  if (tooltipEl.value) tooltipEl.value.style.opacity = '0'
+}
+
+onMounted(() => {
+  document.addEventListener('mouseover', onMouseOver)
+  document.addEventListener('mouseout', onMouseOut)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mouseover', onMouseOver)
+  document.removeEventListener('mouseout', onMouseOut)
+})
 </script>
 
 <template lang="pug">
@@ -57,6 +105,8 @@ gameStore.fetchData()
       DungeonComponent(v-show="activeView === 'dungeon'")
 
 .right-panel
+
+#global-tooltip(ref="tooltipEl")
 </template>
 
 <style lang="scss" scoped>
@@ -234,6 +284,42 @@ gameStore.fetchData()
     }
   }
 }
+#global-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background-color: var(--theme-col-dark-blurple);
+  color: var(--theme-col-parchment-light);
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  &.above::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--theme-col-dark-blurple);
+  }
+
+  &.below::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: var(--theme-col-dark-blurple);
+  }
+}
+
 .main-content-wrapper {
   height: 72vh;
   padding: 0.5em 2em;
