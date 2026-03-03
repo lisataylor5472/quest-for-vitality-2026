@@ -40,6 +40,7 @@ export interface Campaign {
   enemyMaxHp: string | number
   enemyProg: string | number
   enemySpeed: string | number
+  enemyDmgZone: string | number
   enemyDmg: string | number
   reward: string
   rewardDesc?: string

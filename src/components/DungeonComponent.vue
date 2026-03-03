@@ -9,6 +9,13 @@ const store = useGameStore()
 
 const hoveredPlayerId = ref<string | null>(null)
 const collapsedGroups = ref(new Set<string>())
+const enemyCollapsed = ref(false)
+
+const campaignC1 = computed(() => store.campaigns.find((c) => c.id === 'c1') ?? null)
+
+function enemySrc(img: string) {
+  return new URL(`../assets/${img}`, import.meta.url).href
+}
 
 function toggleGroup(cls: string) {
   if (collapsedGroups.value.has(cls)) {
@@ -96,10 +103,34 @@ const playersPositioned = computed(() => {
   .content-layout(v-else)
     .main-row
       .side-panel
+        .enemy-section(v-if="campaignC1")
+          .enemy-section-header(@click="enemyCollapsed = !enemyCollapsed")
+            span.enemy-section-label ENEMY
+            span.material-icons.collapse-icon {{ enemyCollapsed ? 'expand_more' : 'expand_less' }}
+          .enemy-section-body(v-show="!enemyCollapsed")
+            span.enemy-name {{ campaignC1.enemy }}
+            .enemy-block
+              img.enemy-section-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
+              .enemy-stats
+                .en-row
+                  span.en-label HP
+                  span.en-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
+                .en-row
+                  span.en-label DMG
+                  span.en-value {{ campaignC1.enemyDmg }}
+                .en-row
+                  span.en-label DMG Zone
+                  span.en-value {{ campaignC1.enemyDmgZone }}%
+                .en-row
+                  span.en-label Speed
+                  span.en-value {{ campaignC1.enemySpeed }}% per week
+        .party-header Our Party
         .player-roster
           .class-group(v-for="group in groupedPlayers" :key="group.class")
+
             .class-group-header(:class="`class-${group.class}`" @click="toggleGroup(group.class)")
               span.class-group-label {{ group.class }}
+              span.class-group-count  ({{ group.players.length }})
               span.material-icons.collapse-icon {{ collapsedGroups.has(group.class) ? 'expand_more' : 'expand_less' }}
             table.roster-table(v-show="!collapsedGroups.has(group.class)")
               tbody
@@ -179,9 +210,23 @@ const playersPositioned = computed(() => {
   flex-direction: column;
 }
 
+.party-header {
+  margin-top: 0.5rem;
+  background-color: var(--theme-col-blurple);
+  color: var(--theme-col-lightest-blurple);
+  font-family: 'Space Grotesk', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 10px 10px 0 0;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
 .player-roster {
   background-color: var(--theme-col-parchment-light);
-  border-radius: 20px;
+  border-radius: 0 0 20px 20px;
   overflow-y: auto;
   min-height: 0;
   flex: 1;
@@ -190,6 +235,7 @@ const playersPositioned = computed(() => {
 
 .roster-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0 2px;
   font-size: 0.85rem;
@@ -217,7 +263,7 @@ const playersPositioned = computed(() => {
       background-color: rgba(60, 60, 80, 0.15);
     }
     &.class-barbarian {
-      background-color: rgba(200, 60, 40, 0.15);
+      background-color: rgba(220, 120, 20, 0.15);
     }
   }
 
@@ -229,14 +275,14 @@ const playersPositioned = computed(() => {
 }
 
 .avatar-cell {
-  width: 2.8rem;
-  padding: 0.2rem 0.25rem;
+  width: 1.8rem;
+  padding: 0.2rem 0.1rem;
 }
 
 .avatar {
   display: block;
-  width: 2.4rem;
-  height: 1.8rem;
+  width: 1.5rem;
+  height: 1.4rem;
   object-fit: contain;
 }
 
@@ -244,6 +290,7 @@ const playersPositioned = computed(() => {
   text-align: left;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   padding: 0.2rem 0.4rem;
 }
 
@@ -285,7 +332,7 @@ const playersPositioned = computed(() => {
     background-color: rgba(60, 60, 80, 0.12);
   }
   &.class-barbarian {
-    background-color: rgba(200, 60, 40, 0.12);
+    background-color: rgba(220, 120, 20, 0.12);
   }
 
   &:hover {
@@ -301,12 +348,27 @@ const playersPositioned = computed(() => {
   text-transform: uppercase;
 }
 
+.class-group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.class-group-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.6;
+  margin-left: 0.2rem;
+}
+
 .collapse-icon {
   font-size: 1rem;
   opacity: 0.6;
+  margin-left: auto;
 }
 
 .col-ap {
+  width: 2.8rem;
   white-space: nowrap;
 
   .ap-icon {
@@ -321,6 +383,7 @@ const playersPositioned = computed(() => {
 }
 
 .col-hp {
+  width: 3.5rem;
   font-size: 0.7rem;
 }
 
@@ -451,17 +514,18 @@ const playersPositioned = computed(() => {
     border-color: rgba(60, 60, 80, 0.4);
   }
   &.class-barbarian {
-    border-color: rgba(200, 60, 40, 0.5);
+    border-color: rgba(220, 120, 20, 0.5);
   }
 }
 
 .card-header {
   font-family: 'Space Grotesk', serif;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
   text-align: center;
-  color: var(--theme-col-blurple);
+  text-transform: uppercase;
+  // color: var(--theme-col-blurple);
 
   .class-ranger & {
     background-color: rgba(40, 100, 200, 0.2);
@@ -479,7 +543,7 @@ const playersPositioned = computed(() => {
     background-color: rgba(60, 60, 80, 0.2);
   }
   .class-barbarian & {
-    background-color: rgba(200, 60, 40, 0.2);
+    background-color: rgba(220, 120, 20, 0.2);
   }
 }
 
@@ -528,6 +592,97 @@ const playersPositioned = computed(() => {
   font-size: 0.8rem;
   color: var(--theme-col-brown-light);
   line-height: 1.3;
+}
+
+.enemy-section {
+  flex: 0 0 auto;
+  background-color: var(--theme-col-parchment-light);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.enemy-section-header {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  // background-color: rgba(230, 83, 61, 0.34);
+  color: var(--theme-col-white-mute);
+  background-color: var(--theme-col-red);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+.enemy-section-label {
+  font-family: 'Space Grotesk', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.enemy-section-body {
+  padding: 0.5rem 0.75rem;
+}
+
+.enemy-name {
+  display: block;
+  font-family: 'Space Grotesk', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+  margin-bottom: 0.4rem;
+}
+
+.enemy-block {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.enemy-section-img {
+  flex: 0 0 auto;
+  width: 8rem;
+  height: 8rem;
+  object-fit: contain;
+}
+
+.enemy-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.en-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--theme-col-parchment-dark);
+  padding-bottom: 0.2rem;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.en-label {
+  color: var(--theme-col-brown-light);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.en-value {
+  font-weight: 600;
+  color: var(--theme-col-brown);
 }
 
 .error {
