@@ -85,6 +85,25 @@ function sortIcon(key?: SortKey) {
 }
 
 // ---------------------------------------------------------------------------
+// Tie detection — compares two players on whichever criteria are active
+// ---------------------------------------------------------------------------
+function isTiedWith(a: Player, b: Player): boolean {
+  if (!sortKey.value) {
+    return (
+      a.totalXp === b.totalXp &&
+      a.level === b.level &&
+      a.totalActiveDays === b.totalActiveDays &&
+      (a.achievements as number) === (b.achievements as number)
+    )
+  }
+  const key = sortKey.value
+  if (key === 'charName') return a.charName === b.charName
+  if (key === 'class') return a.class === b.class
+  if (key === 'achievements') return (a.achievements as number) === (b.achievements as number)
+  return (a[key] as number) === (b[key] as number)
+}
+
+// ---------------------------------------------------------------------------
 // Sorted player list — falls back to store's hierarchy when no column is active
 // ---------------------------------------------------------------------------
 const displayedPlayers = computed(() => {
@@ -109,6 +128,18 @@ const displayedPlayers = computed(() => {
     const bVal = key === 'achievements' ? (b.achievements as number) : (b[key] as number)
     return dir * (bVal - aVal)
   })
+})
+
+// Competition ranking: tied players share a rank; next rank skips accordingly.
+const playerRanks = computed<Map<string, number>>(() => {
+  const list = displayedPlayers.value
+  const ranks = new Map<string, number>()
+  let rank = 1
+  for (let i = 0; i < list.length; i++) {
+    if (i > 0 && !isTiedWith(list[i]!, list[i - 1]!)) rank = i + 1
+    ranks.set(list[i]!.playerId, rank)
+  }
+  return ranks
 })
 
 const TOTAL_COLS = 11
@@ -194,7 +225,7 @@ const TOTAL_COLS = 11
             @click="toggleExpand(player.playerId)"
             :class="{ 'is-expanded': expandedPlayerId === player.playerId, 'is-odd': index % 2 !== 0 }"
           )
-            td.rank {{ index + 1 }}
+            td.rank {{ playerRanks.get(player.playerId) }}
             td.avatar-cell
               img.avatar(:src="avatarSrc(player.img)" :alt="player.charName")
             td.player-name

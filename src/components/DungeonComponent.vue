@@ -1,11 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
 import MagicLoader from '@/components/MagicLoader.vue'
 
 const rustyKnightUrl = new URL('../assets/rusty-knight.png', import.meta.url).href
 
 const store = useGameStore()
+
+const hoveredPlayerId = ref<string | null>(null)
+const collapsedGroups = ref(new Set<string>())
+
+function toggleGroup(cls: string) {
+  if (collapsedGroups.value.has(cls)) {
+    collapsedGroups.value.delete(cls)
+  } else {
+    collapsedGroups.value.add(cls)
+  }
+}
+
+function truncate(text: string, max = 21): string {
+  return text.length > max ? text.slice(0, max) + '…' : text
+}
 
 function avatarSrc(img: string) {
   if (!img) return new URL('../assets/avatars/default.png', import.meta.url).href
@@ -31,6 +46,16 @@ const players = computed(() =>
     }),
 )
 
+const groupedPlayers = computed(() => {
+  const map = new Map<string, (typeof players.value)[number][]>()
+  for (const p of players.value) {
+    const cls = p.class?.toLowerCase() ?? 'unknown'
+    if (!map.has(cls)) map.set(cls, [])
+    map.get(cls)!.push(p)
+  }
+  return CLASS_ORDER.filter((c) => map.has(c)).map((c) => ({ class: c, players: map.get(c)! }))
+})
+
 const classCards = computed(() =>
   [...store.classInfo].sort((a, b) => {
     const ai = CLASS_ORDER.indexOf(a.class.toLowerCase())
@@ -42,6 +67,11 @@ const classCards = computed(() =>
 )
 
 const AVATAR_STEP_REM = 2.5
+
+const hoveredDgnProgress = computed(() => {
+  if (!hoveredPlayerId.value) return null
+  return players.value.find((p) => p.playerId === hoveredPlayerId.value)?.dgnProgress ?? null
+})
 
 const playersPositioned = computed(() => {
   const groups = new Map<number, number>() // dgnProgress -> count so far
@@ -67,34 +97,30 @@ const playersPositioned = computed(() => {
     .main-row
       .side-panel
         .player-roster
-          table.roster-table
-            thead
-              tr
-                th
-                th.col-name Player
-                th.col-class Class
-                th.col-hp HP
-                th.col-dgn Dgn%
-                th.col-ap
-                  span.material-icons.ap-icon campaign
-            tbody
-              tr(v-for="p in players" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`")
-                td.avatar-cell
-                  img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
-                td.col-name
-                  span.char-name {{ p.charName }}
-                  span.real-name {{ p.realName }}
-                td.col-class {{ p.class }}
-                td.col-hp {{ p.hp }}/{{ p.maxHp }}
-                td.col-dgn {{ p.dgnProgress }}%
-                td.col-ap {{ p.actionPoints }}
+          .class-group(v-for="group in groupedPlayers" :key="group.class")
+            .class-group-header(:class="`class-${group.class}`" @click="toggleGroup(group.class)")
+              span.class-group-label {{ group.class }}
+              span.material-icons.collapse-icon {{ collapsedGroups.has(group.class) ? 'expand_more' : 'expand_less' }}
+            table.roster-table(v-show="!collapsedGroups.has(group.class)")
+              tbody
+                tr(v-for="p in group.players" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null")
+                  td.avatar-cell
+                    img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
+                  td.col-name
+                    span.char-name(:data-tooltip="p.charName.length > 20 ? p.charName : undefined") {{ truncate(p.charName) }}
+                    span.real-name(:data-tooltip="p.realName.length > 20 ? p.realName : undefined") {{ truncate(p.realName) }}
+                  td.col-hp {{ p.hp }}/{{ p.maxHp }}
+                  td.col-ap
+                    | {{ p.actionPoints }}
+                    span.material-icons.ap-icon campaign
       .main-content
         .dungeon-floor
           .danger-zone
           .enemy-buffer
             img.enemy-img(:src="rustyKnightUrl" alt="Rusty Knight")
           .player-progress-zone
-            .player-token(v-for="p in playersPositioned" :key="p.playerId" :style="{ left: p.dgnProgress + '%', top: `calc(50% + ${p.topOffset}rem)` }")
+            .hover-radius(v-if="hoveredDgnProgress !== null" :style="{ left: hoveredDgnProgress + '%' }")
+            .player-token(v-for="p in playersPositioned" :key="p.playerId" :style="{ left: p.dgnProgress + '%', top: `calc(50% + ${p.topOffset}rem)` }" :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }")
               img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
         .class-info-row
           .class-card(v-for="c in classCards" :key="c.class" :class="`class-${c.class.toLowerCase()}`")
@@ -103,12 +129,12 @@ const playersPositioned = computed(() => {
               .ability
                 .ability-header
                   span.ability-name {{ c.ability1Name }}
-                  span.ability-cost {{ c.ability1Cost }} AP
+                  span.ability-cost(v-if="c.ability1Cost > 1") {{ c.ability1Cost }} AP
                 p.ability-desc {{ c.ability1Desc }}
               .ability
                 .ability-header
                   span.ability-name {{ c.ability2Name }}
-                  span.ability-cost {{ c.ability2Cost }} AP
+                  span.ability-cost(v-if="c.ability2Cost > 1") {{ c.ability2Cost }} AP
                 p.ability-desc {{ c.ability2Desc }}
 </template>
 
@@ -130,15 +156,25 @@ const playersPositioned = computed(() => {
 }
 
 .main-row {
-  flex: 0 0 auto;
+  flex: 1;
+  min-height: 0;
   display: flex;
   gap: 1rem;
+  align-items: stretch;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .side-panel {
-  flex: 0 0 30%;
+  flex: 0 0 25%;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -157,35 +193,6 @@ const playersPositioned = computed(() => {
   border-collapse: separate;
   border-spacing: 0 2px;
   font-size: 0.85rem;
-
-  thead tr {
-    background-color: var(--theme-col-blurple);
-    color: var(--theme-col-lightest-blurple);
-
-    th:first-child {
-      border-radius: 0;
-    }
-    th:last-child {
-      border-radius: 0;
-    }
-  }
-
-  th {
-    font-family: 'Grenze Gotisch', serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: lowercase;
-    padding: 0.25rem 0.5rem;
-    text-align: center;
-    user-select: none;
-    white-space: nowrap;
-
-    .ap-icon {
-      font-size: 1.1rem;
-      vertical-align: middle;
-    }
-  }
 
   tbody tr {
     background-color: var(--theme-col-parchment-light);
@@ -242,7 +249,7 @@ const playersPositioned = computed(() => {
 
 .char-name {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--theme-col-blurple);
   line-height: 1.2;
 }
@@ -253,20 +260,80 @@ const playersPositioned = computed(() => {
   line-height: 1;
 }
 
-.col-class {
-  text-align: left;
+.class-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none;
+
+  &.class-ranger {
+    background-color: rgba(40, 100, 200, 0.12);
+  }
+  &.class-cleric {
+    background-color: rgba(220, 190, 80, 0.18);
+  }
+  &.class-druid {
+    background-color: rgba(100, 160, 60, 0.12);
+  }
+  &.class-sorcerer {
+    background-color: rgba(120, 60, 200, 0.12);
+  }
+  &.class-rogue {
+    background-color: rgba(60, 60, 80, 0.12);
+  }
+  &.class-barbarian {
+    background-color: rgba(200, 60, 40, 0.12);
+  }
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+.class-group-label {
+  font-family: 'Space Grotesk', serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.collapse-icon {
+  font-size: 1rem;
+  opacity: 0.6;
+}
+
+.col-ap {
+  white-space: nowrap;
+
+  .ap-icon {
+    font-size: 0.85rem;
+    vertical-align: middle;
+    opacity: 0.7;
+  }
+}
+
+.col-dgn {
   font-size: 0.8rem;
 }
 
+.col-hp {
+  font-size: 0.7rem;
+}
+
 .dungeon-floor {
-  flex: 1;
+  --floor-height: 35vh;
+  flex: none;
   min-width: 0;
   border-radius: 20px;
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
-  height: 40vh;
+  height: var(--floor-height);
 
   &::before {
     content: '';
@@ -296,16 +363,40 @@ const playersPositioned = computed(() => {
   flex: 1;
 }
 
+.hover-radius {
+  position: absolute;
+  top: 0;
+  width: 10%;
+  height: 100%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+  transition: left 0.2s ease;
+}
+
 .player-token {
   position: absolute;
   transform: translateY(-50%);
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease;
+
+  &.is-highlighted {
+    transform: translateY(-50%) scale(1.25);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+    z-index: 10;
+  }
+
+  &.is-dimmed {
+    opacity: 0.35;
+  }
 }
 
 .player-avatar {
   display: block;
-  // width: 2.4rem;
-  height: 4.5rem;
-  // width: auto;
+  height: clamp(1rem, 7vh, 4.5rem);
+  max-height: 75%;
   object-fit: contain;
 }
 
@@ -424,6 +515,7 @@ const playersPositioned = computed(() => {
 .ability-cost {
   font-size: 0.63rem;
   background-color: var(--theme-col-blurple);
+  // background-color: var(--theme-col-brown-light);
   color: white;
   padding: 0.05rem 0.3rem;
   border-radius: 3px;
