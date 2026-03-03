@@ -66,7 +66,7 @@ const classCards = computed(() =>
   }),
 )
 
-const AVATAR_STEP_REM = 2.5
+const AVATAR_STEP_REM = 1.8
 
 const hoveredDgnProgress = computed(() => {
   if (!hoveredPlayerId.value) return null
