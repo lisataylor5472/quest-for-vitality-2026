@@ -9,7 +9,21 @@ const store = useGameStore()
 
 const hoveredPlayerId = ref<string | null>(null)
 const collapsedGroups = ref(new Set<string>())
+const expandedPlayers = ref(new Set<string>())
 const enemyCollapsed = ref(false)
+const apFilter = ref(true)
+
+function toggleExpanded(playerId: string) {
+  if (expandedPlayers.value.has(playerId)) {
+    expandedPlayers.value.delete(playerId)
+  } else {
+    expandedPlayers.value.add(playerId)
+  }
+}
+
+function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
+  return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
+}
 
 const campaignC1 = computed(() => store.campaigns.find((c) => c.id === 'c1') ?? null)
 
@@ -41,7 +55,6 @@ const players = computed(() =>
     .filter((p) => store.cmpgn1ByPlayer.has(p.playerId))
     .map((p) => ({
       ...p,
-      actionPoints: store.cmpgn1ByPlayer.get(p.playerId)!.actionPoints,
       dgnProgress: store.cmpgn1ByPlayer.get(p.playerId)!.dgnProgress,
     }))
     .sort((a, b) => {
@@ -54,8 +67,9 @@ const players = computed(() =>
 )
 
 const groupedPlayers = computed(() => {
+  const source = apFilter.value ? players.value.filter((p) => p.actionPoints > 0) : players.value
   const map = new Map<string, (typeof players.value)[number][]>()
-  for (const p of players.value) {
+  for (const p of source) {
     const cls = p.class?.toLowerCase() ?? 'unknown'
     if (!map.has(cls)) map.set(cls, [])
     map.get(cls)!.push(p)
@@ -124,7 +138,10 @@ const playersPositioned = computed(() => {
                 .en-row
                   span.en-label Speed
                   span.en-value {{ campaignC1.enemySpeed }}% per week
-        .party-header Our Party
+        .party-header
+          span Our Party
+          button.ap-filter-btn(@click="apFilter = !apFilter" :class="{ active: apFilter }")
+            span.material-icons campaign
         .player-roster
           .class-group(v-for="group in groupedPlayers" :key="group.class")
 
@@ -134,16 +151,29 @@ const playersPositioned = computed(() => {
               span.material-icons.collapse-icon {{ collapsedGroups.has(group.class) ? 'expand_more' : 'expand_less' }}
             table.roster-table(v-show="!collapsedGroups.has(group.class)")
               tbody
-                tr(v-for="p in group.players" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null")
-                  td.avatar-cell
-                    img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
-                  td.col-name
-                    span.char-name(:data-tooltip="p.charName.length > 20 ? p.charName : undefined") {{ truncate(p.charName) }}
-                    span.real-name(:data-tooltip="p.realName.length > 20 ? p.realName : undefined") {{ truncate(p.realName) }}
-                  td.col-hp {{ p.hp }}/{{ p.maxHp }}
-                  td.col-ap
-                    | {{ p.actionPoints }}
-                    span.material-icons.ap-icon campaign
+                template(v-for="p in group.players" :key="p.playerId")
+                  tr(:class="['class-' + p.class?.toLowerCase(), { 'is-expanded': expandedPlayers.has(p.playerId) }]" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null" @click="toggleExpanded(p.playerId)" style="cursor:pointer")
+                    td.avatar-cell
+                      img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
+                    td.col-name
+                      span.char-name(:data-tooltip="p.charName.length > 20 ? p.charName : undefined") {{ truncate(p.charName) }}
+                      span.real-name(:data-tooltip="p.realName.length > 20 ? p.realName : undefined") {{ truncate(p.realName) }}
+                    td.col-hp {{ p.hp }}/{{ p.maxHp }}
+                    td.col-items
+                      span.material-icons.bag-icon backpack
+                      | {{ itemCount(p) }}
+                    td.col-ap
+                      span.material-icons.ap-icon campaign
+                      | {{ p.actionPoints }}
+                  tr.expanded-row(v-if="expandedPlayers.has(p.playerId)" :class="`class-${p.class?.toLowerCase()}`")
+                    td(colspan="5")
+                      .item-list
+                        span.item-slot-label ITEMS:
+                        .item-slots
+                          span.item-slot-value(v-if="p.itemSlot1") {{ p.itemSlot1 }}
+                          span.item-slot-empty(v-else) [ ... ]
+                          span.item-slot-value(v-if="p.itemSlot2") {{ p.itemSlot2 }}
+                          span.item-slot-empty(v-else) [ ... ]
       .main-content
         .dungeon-floor
           .danger-zone
@@ -218,10 +248,42 @@ const playersPositioned = computed(() => {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  padding: 0.25rem 0.75rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
   border-radius: 10px 10px 0 0;
   flex-shrink: 0;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ap-filter-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.1rem 0.25rem;
+
+  .material-icons {
+    font-size: 1rem;
+  }
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.85);
+  }
 }
 
 .player-roster {
@@ -367,8 +429,69 @@ const playersPositioned = computed(() => {
   margin-left: auto;
 }
 
+.col-items {
+  width: 2.8rem;
+  text-align: center;
+  padding: 0.2rem 0.25rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.bag-icon {
+  font-size: 0.85rem;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.expanded-row td {
+  padding: 0.25rem 0.5rem 0.4rem;
+  background-color: var(--theme-col-parchment-light);
+}
+
+.item-list {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.item-slot-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--theme-col-brown-light);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 3em;
+}
+
+.item-slots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.item-slot-value {
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  margin-right: 0.5rem;
+}
+
+.item-slot-empty {
+  color: var(--theme-col-brown-light);
+  opacity: 0.45;
+  margin-right: 0.5rem;
+}
+
 .col-ap {
   width: 2.8rem;
+  text-align: center;
+  padding: 0.2rem 0.25rem;
+  font-size: 0.7rem;
   white-space: nowrap;
 
   .ap-icon {
@@ -627,7 +750,7 @@ const playersPositioned = computed(() => {
 }
 
 .enemy-section-body {
-  padding: 0.5rem 0.75rem;
+  padding: 0.2rem 0.75rem;
 }
 
 .enemy-name {

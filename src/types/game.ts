@@ -70,11 +70,14 @@ export interface Player {
   class: string
   hp: number
   maxHp: number
+  actionPoints: number
   weekWins: number | string
   totalXp: number
   level: number
   achievements: number
   totalActiveDays: number
+  itemSlot1: string
+  itemSlot2: string
   [key: string]: unknown // achievement boolean columns (e.g. "create-char": true)
 }
 
@@ -89,7 +92,6 @@ export interface CampaignProgress {
   w2Count: number
   w3Count: number
   w4Count: number
-  actionPoints: number
 }
 
 // Raw activity log row. Rows with an empty playerId are padding/rest days and
