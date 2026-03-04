@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import CampaignComponent from '@/components/CampaignComponent.vue'
-import LeaderboardComponent from '@/components/LeaderboardComponent.vue'
-import DungeonComponent from '@/components/DungeonComponent.vue'
 import { useGameStore } from '@/stores/game'
-import MagicLoader from '@/components/MagicLoader.vue'
-
-type View = 'campaign' | 'leaderboard' | 'dungeon'
-
-const activeView = ref<View>('campaign')
 
 const gameStore = useGameStore()
 gameStore.fetchData()
@@ -93,16 +85,15 @@ onUnmounted(() => {
             img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
-      button(@click="activeView = 'leaderboard'" :class="{ active: activeView === 'leaderboard' }") leaderboard
-      button(@click="activeView = 'campaign'" :class="{ active: activeView === 'campaign' }") campaign
-      button(@click="activeView = 'dungeon'" :class="{ active: activeView === 'dungeon' }") dungeon
+      RouterLink(to="/leaderboard" custom v-slot="{ navigate, isActive }")
+        button(@click="navigate" :class="{ active: isActive }") leaderboard
+      RouterLink(to="/campaign" custom v-slot="{ navigate, isActive }")
+        button(@click="navigate" :class="{ active: isActive }") campaign
+      RouterLink(to="/dungeon" custom v-slot="{ navigate, isActive }")
+        button(@click="navigate" :class="{ active: isActive }") dungeon
   .main-content-wrapper
     .parchment-page
-      //- .loading-wrapper
-        //- MagicLoader
-      CampaignComponent(v-show="activeView === 'campaign'")
-      LeaderboardComponent(v-show="activeView === 'leaderboard'")
-      DungeonComponent(v-show="activeView === 'dungeon'")
+      RouterView
 
 .right-panel
 
