@@ -102,6 +102,36 @@ export interface PlayerActivity {
   activeDay: string // ISO date string or ""
 }
 
+export interface GameItem {
+  itemNo: string
+  Legendary: boolean
+  revealed: boolean
+  itemName: string
+  Type: string
+  Effect: string
+}
+
+export interface DungeonElement {
+  id: number
+  campaign: string
+  item: string // "chest" | "legendaryChest"
+  di: string // "d6" | "d20"
+  looted: boolean
+  location: number // 0–100 percentage position on dungeon floor
+  visible: boolean
+  itemsRevealed: boolean
+  item1: string
+  item2: string
+  item3: string
+  item4: string
+  item5: string
+  item6: string
+}
+
+export interface InitiativeOrder {
+  playerId: string
+}
+
 export interface ApiResponse {
   dashboard: DashboardEntry[]
   classInfo: ClassInfo[]
@@ -110,4 +140,7 @@ export interface ApiResponse {
   achievements: Achievement[]
   cmpgn1: CampaignProgress[]
   plyrActivity: PlayerActivity[]
+  dungeonElements: DungeonElement[]
+  items: GameItem[]
+  initiativeOrder: InitiativeOrder[]
 }

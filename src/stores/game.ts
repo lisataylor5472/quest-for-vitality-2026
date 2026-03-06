@@ -7,6 +7,9 @@ import type {
   CampaignProgress,
   DashboardEntry,
   ClassInfo,
+  DungeonElement,
+  GameItem,
+  InitiativeOrder,
   Player,
   PlayerActivity,
 } from '@/types/game'
@@ -22,6 +25,9 @@ export const useGameStore = defineStore('game', () => {
   const cmpgn1 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
   const achievements = ref<Achievement[]>([])
+  const dungeonElements = ref<DungeonElement[]>([])
+  const items = ref<GameItem[]>([])
+  const initiativeOrder = ref<InitiativeOrder[]>([])
 
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -98,6 +104,9 @@ export const useGameStore = defineStore('game', () => {
       cmpgn1.value = data.cmpgn1
       plyrActivity.value = data.plyrActivity
       achievements.value = data.achievements
+      dungeonElements.value = data.dungeonElements ?? []
+      items.value = data.items ?? []
+      initiativeOrder.value = data.initiativeOrder ?? []
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch data'
     } finally {
@@ -117,6 +126,9 @@ export const useGameStore = defineStore('game', () => {
     cmpgn1,
     plyrActivity,
     achievements,
+    dungeonElements,
+    items,
+    initiativeOrder,
     loading,
     error,
     // computed

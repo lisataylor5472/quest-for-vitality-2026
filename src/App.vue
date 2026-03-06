@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useGameStore } from '@/stores/game'
+import DiceRoller from '@/components/DiceRoller.vue'
+
+const route = useRoute()
 
 const gameStore = useGameStore()
 gameStore.fetchData()
@@ -91,6 +95,7 @@ onUnmounted(() => {
         button(@click="navigate" :class="{ active: isActive }") campaign
       RouterLink(to="/dungeon" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") dungeon
+      DiceRoller(v-if="route.path === '/dungeon'")
   .main-content-wrapper
     .parchment-page
       RouterView
@@ -105,6 +110,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 10;
   padding: 0.25rem 1rem;
   height: 4rem;
   margin-bottom: 0.5em;
