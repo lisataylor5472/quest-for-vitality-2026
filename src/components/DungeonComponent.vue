@@ -211,7 +211,7 @@ const playersPositioned = computed(() => {
             .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`")
               span.initiative-num {{ i + 1 }}
               img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
-              span.initiative-name {{ truncate(p.charName) }}
+              span.initiative-name {{ p.charName }}
               span.initiative-ap
                 span.material-icons.ap-icon campaign
                 | {{ p.actionPoints }}
