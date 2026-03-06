@@ -272,7 +272,7 @@ const playersPositioned = computed(() => {
               span.universal-action-name Use Item
               span.universal-action-detail  See item for cost - does not apply to immediate use or Buffs
             .universal-divider
-            span.universal-ap-note Ability Cost: 1AP (unless noted otherwise)
+            span.universal-ap-note Ability: 1AP (U.N.O.)
           .class-info-row
             .class-card(v-for="c in classCards" :key="c.class" :class="`class-${c.class.toLowerCase()}`")
               .card-header {{ c.class }}
