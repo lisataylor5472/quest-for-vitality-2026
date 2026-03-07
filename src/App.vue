@@ -9,6 +9,14 @@ const route = useRoute()
 const gameStore = useGameStore()
 gameStore.fetchData()
 
+const refreshing = ref(false)
+async function handleQuietRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  await gameStore.quietRefresh()
+  refreshing.value = false
+}
+
 // ---------------------------------------------------------------------------
 // Global tooltip — position: fixed so it renders above scrollbars and outside
 // any overflow container. Reads the existing data-tooltip / data-tooltip-pos
@@ -89,13 +97,18 @@ onUnmounted(() => {
             img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
+    .nav-pills
       RouterLink(to="/leaderboard" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") leaderboard
       RouterLink(to="/campaign" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") campaign
       RouterLink(to="/dungeon" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") dungeon
-      DiceRoller(v-if="route.path === '/dungeon'")
+    button.refresh-btn(@click="handleQuietRefresh" :class="{ spinning: refreshing }" data-tooltip="Refresh data" data-tooltip-pos="below")
+      svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round")
+        polyline(points="23 4 23 10 17 10")
+        path(d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10")
+    DiceRoller(v-if="route.path === '/dungeon'")
   .main-content-wrapper
     .parchment-page
       RouterView
@@ -116,44 +129,84 @@ onUnmounted(() => {
   height: 4rem;
   margin-bottom: 0.5em;
   margin-left: 12em;
+  gap: 0.75rem;
 
-  button {
-    border: 2px solid var(--theme-col-blurple);
-    width: 150px;
-    font-size: 1.4rem;
-    font-family: 'Grenze Gotisch', serif;
+  .nav-pills {
     display: flex;
-    justify-content: center;
+
+    button {
+      border: 2px solid var(--theme-col-blurple);
+      width: 150px;
+      font-size: 1.4rem;
+      font-family: 'Grenze Gotisch', serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-bottom: 4px;
+      cursor: pointer;
+      transition:
+        transform 0.1s ease,
+        box-shadow 0.1s ease;
+
+      &:not(.active) {
+        background: #d0d6ff;
+        color: var(--theme-col-blurple);
+        box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
+      }
+
+      &.active {
+        background: var(--theme-col-blurple);
+        color: #fff;
+        box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
+      }
+
+      &:hover:not(.active) {
+        background: var(--theme-col-lightest-blurple);
+      }
+
+      &:first-of-type {
+        border-radius: 37px 0 0 37px;
+      }
+
+      &:last-of-type {
+        border-radius: 0 37px 37px 0;
+      }
+    }
+  }
+
+  .refresh-btn {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    border: 2px solid var(--theme-col-blurple);
+    background: #d0d6ff;
+    color: var(--theme-col-blurple);
+    display: flex;
     align-items: center;
-    padding-bottom: 4px;
+    justify-content: center;
     cursor: pointer;
-    transition:
-      transform 0.1s ease,
-      box-shadow 0.1s ease;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.1s ease;
 
-    &:not(.active) {
-      background: #d0d6ff;
-      color: var(--theme-col-blurple);
-      box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
-    }
-
-    &.active {
-      background: var(--theme-col-blurple);
-      color: #fff;
-      box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
-    }
-
-    &:hover:not(.active) {
+    &:hover {
       background: var(--theme-col-lightest-blurple);
     }
 
-    &:first-of-type {
-      border-radius: 37px 0 0 37px;
+    svg {
+      width: 1rem;
+      height: 1rem;
     }
 
-    &:last-of-type {
-      border-radius: 0 37px 37px 0;
+    &.spinning svg {
+      animation: spin 0.7s linear infinite;
     }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

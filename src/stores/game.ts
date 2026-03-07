@@ -114,6 +114,27 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  async function quietRefresh() {
+    error.value = null
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: ApiResponse = await res.json()
+      dashboard.value = data.dashboard
+      classInfo.value = data.classInfo
+      campaigns.value = data.campaigns
+      players.value = data.players.filter((p) => !!p.playerId)
+      cmpgn1.value = data.cmpgn1
+      plyrActivity.value = data.plyrActivity
+      achievements.value = data.achievements
+      dungeonElements.value = data.dungeonElements ?? []
+      items.value = data.items ?? []
+      initiativeOrder.value = data.initiativeOrder ?? []
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch data'
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
@@ -139,5 +160,6 @@ export const useGameStore = defineStore('game', () => {
     cmpgn1ByPlayer,
     // actions
     fetchData,
+    quietRefresh,
   }
 })

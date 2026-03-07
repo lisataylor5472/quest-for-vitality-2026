@@ -208,7 +208,7 @@ const playersPositioned = computed(() => {
             span.material-icons campaign
         .player-roster
           .initiative-list(v-if="rosterTab === 'initiative'")
-            .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`")
+            .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null")
               span.initiative-num {{ i + 1 }}
               img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
               span.initiative-name {{ p.charName }}
@@ -258,7 +258,7 @@ const playersPositioned = computed(() => {
             .hover-radius(v-if="hoveredDgnProgress !== null" :style="{ left: hoveredDgnProgress + '%' }")
             .chest-token(v-for="chest in c1Chests" :key="chest.id" :style="{ left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
               img.chest-img(:src="chestSrc(chest.looted)" :alt="chest.item")
-              .chest-tooltip(v-if="hoveredChestId === chest.id && chest.itemsRevealed")
+              .chest-tooltip(v-if="hoveredChestId === chest.id && chest.itemsRevealed" :class="chest.location < 50 ? 'tooltip-right' : 'tooltip-left'")
                 span.chest-tooltip-item(v-for="name in chestItemNames(chest)" :key="name") {{ name }}
             .player-token(v-for="p in playersPositioned" :key="p.playerId" :style="{ left: p.dgnProgress + '%', top: `calc(50% + ${p.topOffset}rem)` }" :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }")
               img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
@@ -741,7 +741,8 @@ td.col-name {
   flex: none;
   min-width: 0;
   border-radius: 20px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   position: relative;
   display: flex;
   align-items: center;
@@ -791,6 +792,10 @@ td.col-name {
   transform: translateX(-50%);
   z-index: 5;
 
+  &:hover {
+    z-index: 100;
+  }
+
   &.is-legendary .chest-img {
     filter: drop-shadow(0 0 5px rgba(255, 200, 50, 0.9));
   }
@@ -809,9 +814,9 @@ td.col-name {
 
 .chest-tooltip {
   position: absolute;
-  bottom: calc(100% + 0.4rem);
-  left: 50%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
   background: var(--theme-col-parchment-light);
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 6px;
@@ -820,18 +825,35 @@ td.col-name {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  z-index: 20;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   pointer-events: none;
 
-  &::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--theme-col-parchment-light);
+  &.tooltip-right {
+    left: calc(100% + 0.5rem);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-right-color: var(--theme-col-parchment-light);
+    }
+  }
+
+  &.tooltip-left {
+    right: calc(100% + 0.5rem);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-left-color: var(--theme-col-parchment-light);
+    }
   }
 }
 
