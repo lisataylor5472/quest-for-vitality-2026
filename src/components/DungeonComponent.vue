@@ -13,7 +13,7 @@ const hoveredPlayerId = ref<string | null>(null)
 const collapsedGroups = ref(new Set<string>())
 const expandedPlayers = ref(new Set<string>())
 const enemyCollapsed = ref(false)
-const apFilter = ref(true)
+const apFilter = ref(false)
 const rosterTab = ref<'roster' | 'initiative'>('roster')
 
 function toggleExpanded(playerId: string) {

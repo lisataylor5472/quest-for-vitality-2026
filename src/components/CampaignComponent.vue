@@ -6,6 +6,42 @@ import MagicLoader from '@/components/MagicLoader.vue'
 const store = useGameStore()
 
 // ---------------------------------------------------------------------------
+// Expand / collapse per player row
+// ---------------------------------------------------------------------------
+const expandedPlayers = ref(new Set<string>())
+
+function toggleExpanded(playerId: string) {
+  if (expandedPlayers.value.has(playerId)) {
+    expandedPlayers.value.delete(playerId)
+  } else {
+    expandedPlayers.value.add(playerId)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Item helpers
+// ---------------------------------------------------------------------------
+function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
+  return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
+}
+
+const itemByNo = computed(() => {
+  const map = new Map<string, string>()
+  for (const item of store.items) {
+    if (item.itemNo) map.set(item.itemNo, item.itemName)
+  }
+  return map
+})
+
+const itemEffectByNo = computed(() => {
+  const map = new Map<string, string>()
+  for (const item of store.items) {
+    if (item.itemNo) map.set(item.itemNo, item.Effect)
+  }
+  return map
+})
+
+// ---------------------------------------------------------------------------
 // Avatar helper (shared pattern with LeaderboardComponent)
 // ---------------------------------------------------------------------------
 function avatarSrc(img: string) {
@@ -197,6 +233,9 @@ const displayedRows = computed(() => {
                 data-tooltip="Character class archetype"
                 data-tooltip-pos="below"
               ) Class
+              th(data-tooltip="Current / max HP" data-tooltip-pos="below") HP
+              th(data-tooltip="Items in backpack" data-tooltip-pos="below") items
+                //- span.material-icons.bag-icon backpack
               th.sortable(
                 :class="{ active: sortKey === 'dgnProgress' }"
                 @click="setSort('dgnProgress')"
@@ -234,26 +273,47 @@ const displayedRows = computed(() => {
                 data-tooltip-pos="below"
               ) Activity
           tbody
-            tr(v-for="row in displayedRows" :key="row.playerId")
-              td.avatar-cell
-                img.avatar(:src="avatarSrc(row.img)" :alt="row.charName")
-              td.player-name
-                span.char-name {{ row.charName }}
-                span.real-name {{ row.realName }}
-              td.class-name {{ row.class }}
-              td {{ row.dgnProgress }}%
-              td {{ row.success }}%
-              td {{ row.weeklyWinCount }}
-              td {{ row.actionPoints }}
-
-              td.activity-cell
-                .activity-track
-                  span.day-box(
-                    v-for="(day, i) in campaignDays"
-                    :key="day"
-                    :data-tooltip="formatDayTooltip(day)"
-                    :class="{ active: activitySetByPlayer.get(row.playerId)?.has(day), 'week-gap': (i + 1) % 7 === 0 && i < campaignDays.length - 1 }"
-                  )
+            template(v-for="row in displayedRows" :key="row.playerId")
+              tr(
+                @click="toggleExpanded(row.playerId)"
+                style="cursor:pointer"
+                :class="{ 'is-expanded': expandedPlayers.has(row.playerId) }"
+              )
+                td.avatar-cell
+                  img.avatar(:src="avatarSrc(row.img)" :alt="row.charName")
+                td.player-name
+                  span.char-name {{ row.charName }}
+                  span.real-name {{ row.realName }}
+                td.class-name {{ row.class }}
+                td.col-hp {{ row.hp }}/{{ row.maxHp }}
+                td.col-items
+                  span.material-icons.bag-icon backpack
+                  span.item-count {{ itemCount(row) }}
+                td {{ row.dgnProgress }}%
+                td {{ row.success }}%
+                td {{ row.weeklyWinCount }}
+                td {{ row.actionPoints }}
+                td.activity-cell
+                  .activity-track
+                    span.day-box(
+                      v-for="(day, i) in campaignDays"
+                      :key="day"
+                      :data-tooltip="formatDayTooltip(day)"
+                      :class="{ active: activitySetByPlayer.get(row.playerId)?.has(day), 'week-gap': (i + 1) % 7 === 0 && i < campaignDays.length - 1 }"
+                    )
+              tr.expanded-row(v-if="expandedPlayers.has(row.playerId)")
+                td(colspan="10")
+                  .item-list
+                    span.item-slot-label ITEMS:
+                    .item-slots
+                      .item-slot-wrapper(v-if="row.itemSlot1")
+                        span.item-slot-value {{ itemByNo.get(row.itemSlot1) ?? row.itemSlot1 }}
+                        .item-slot-tooltip(v-if="itemEffectByNo.get(row.itemSlot1)") {{ itemEffectByNo.get(row.itemSlot1) }}
+                      span.item-slot-empty(v-else) [ ... ]
+                      .item-slot-wrapper(v-if="row.itemSlot2")
+                        span.item-slot-value {{ itemByNo.get(row.itemSlot2) ?? row.itemSlot2 }}
+                        .item-slot-tooltip(v-if="itemEffectByNo.get(row.itemSlot2)") {{ itemEffectByNo.get(row.itemSlot2) }}
+                      span.item-slot-empty(v-else) [ ... ]
 </template>
 
 <style lang="scss" scoped>
@@ -610,6 +670,119 @@ td.player-name {
 .class-name {
   font-size: 0.9em;
   // font-weight: 700;
+}
+
+.col-hp {
+  width: 4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.col-items {
+  width: 3.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bag-icon {
+  font-size: 1rem;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.item-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+  vertical-align: middle;
+  margin-left: 0.15rem;
+}
+
+.expanded-row td {
+  padding: 0.3rem 0.75rem 0.5rem;
+  background-color: var(--theme-col-parchment-light);
+  border-top: none;
+}
+
+.item-list {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.item-slot-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--theme-col-brown-light);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 4rem;
+}
+
+.item-slots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.item-slot-wrapper {
+  position: relative;
+  display: inline-flex;
+
+  &:hover .item-slot-tooltip {
+    display: block;
+  }
+}
+
+.item-slot-value {
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  margin-right: 0.5rem;
+  cursor: default;
+}
+
+.item-slot-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--theme-col-parchment-light);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  white-space: normal;
+  width: 14rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--theme-col-blurple);
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  line-height: 1.35;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--theme-col-parchment-light);
+  }
+}
+
+.item-slot-empty {
+  color: var(--theme-col-brown-light);
+  opacity: 0.45;
+  margin-right: 0.5rem;
 }
 
 .activity-col {
