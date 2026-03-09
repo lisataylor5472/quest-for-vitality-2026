@@ -23,6 +23,7 @@ function enemySrc(img: string) {
 // ---------------------------------------------------------------------------
 type SortKey =
   | 'cmpgnProgress'
+  | 'success'
   | 'dgnProgress'
   | 'weeklyWinCount'
   | 'w1Count'
@@ -205,13 +206,13 @@ const displayedRows = computed(() => {
                 | Dungeon
                 span.material-icons.sort-icon {{ sortIcon('dgnProgress') }}
               th.sortable(
-                :class="{ active: sortKey === 'cmpgnProgress' }"
-                @click="setSort('cmpgnProgress')"
+                :class="{ active: sortKey === 'success' }"
+                @click="setSort('success')"
                 data-tooltip="Campaign quest completion rate"
                 data-tooltip-pos="below"
               )
                 | Success
-                span.material-icons.sort-icon {{ sortIcon('cmpgnProgress') }}
+                span.material-icons.sort-icon {{ sortIcon('success') }}
               th.sortable(
                 :class="{ active: sortKey === 'weeklyWinCount' }"
                 @click="setSort('weeklyWinCount')"
@@ -241,7 +242,7 @@ const displayedRows = computed(() => {
                 span.real-name {{ row.realName }}
               td.class-name {{ row.class }}
               td {{ row.dgnProgress }}%
-              td {{ row.cmpgnProgress }}%
+              td {{ row.success }}%
               td {{ row.weeklyWinCount }}
               td {{ row.actionPoints }}
 

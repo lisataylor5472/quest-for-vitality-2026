@@ -87,6 +87,7 @@ export interface CampaignProgress {
   realName: string
   dgnProgress: number
   cmpgnProgress: number
+  success: number
   weeklyWinCount: number
   w1Count: number
   w2Count: number
