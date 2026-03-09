@@ -153,9 +153,9 @@ const displayedRows = computed(() => {
             .qi-row
               span.qi-label End
               span.qi-value {{ formatDate(campaignC1.end) }}
-            .qi-row
-              span.qi-label Days
-              span.qi-value {{ campaignC1.days }}
+            //- .qi-row
+            //-   span.qi-label Days
+            //-   span.qi-value {{ campaignC1.days }}
             .qi-row.qi-row--stacked
               span.qi-label Quest
               span.qi-value {{ campaignC1.questAction }}
@@ -166,21 +166,21 @@ const displayedRows = computed(() => {
               span.qi-label Reward
               span.qi-value {{ campaignC1.reward }}
               span.qi-desc(v-if="campaignC1.rewardDesc") {{ campaignC1.rewardDesc }}
+            .qi-enemy-block
+              img.qi-enemy-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
             .qi-row
               span.qi-label Threat
               span.qi-value {{ campaignC1.enemy }}
-            .qi-enemy-block
-              img.qi-enemy-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
-              .qi-enemy-stats
-                .qi-row.qi-row--stacked
-                  span.qi-label HP
-                  span.qi-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
-                //- .qi-row.qi-row--stacked
-                //-   span.qi-label Speed
-                //-   span.qi-value {{ campaignC1.enemySpeed }}% per week
-                .qi-row.qi-row--stacked
-                  span.qi-label Dmg
-                  span.qi-value {{ campaignC1.enemyDmg }}
+            .qi-row
+              span.qi-label HP
+              span.qi-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
+              //- .qi-enemy-stats
+              //-   //- .qi-row.qi-row--stacked
+              //-   //-   span.qi-label Speed
+              //-   //-   span.qi-value {{ campaignC1.enemySpeed }}% per week
+              //-   .qi-row.qi-row--stacked
+              //-     span.qi-label Dmg
+              //-     span.qi-value {{ campaignC1.enemyDmg }}
 
 
       .table-scroll-wrapper
@@ -378,6 +378,7 @@ const displayedRows = computed(() => {
 
 .qi-enemy-block {
   display: flex;
+  justify-content: center;
   flex-direction: row;
   align-items: center;
   gap: 0.75rem;
