@@ -170,6 +170,18 @@ const playersPositioned = computed(() => {
       return { ...p, topOffset: offset }
     })
 })
+
+const enemyLeftPercent = computed(() => {
+  const prog = Number(campaignC1.value?.enemyProg ?? 0)
+  return prog === 0 ? 2.5 : 5 + prog * 0.95
+})
+
+const enemyLeft = computed(() => `${enemyLeftPercent.value}%`)
+
+const dangerZoneWidth = computed(() => {
+  const dmgZone = Number(campaignC1.value?.enemyDmgZone ?? 16.75)
+  return `${enemyLeftPercent.value + dmgZone}%`
+})
 </script>
 
 <template lang="pug">
@@ -251,9 +263,9 @@ const playersPositioned = computed(() => {
                             span.item-slot-empty(v-else) [ ... ]
       .main-content
         .dungeon-floor
-          .danger-zone
+          .danger-zone(:style="{ width: dangerZoneWidth }")
           .enemy-buffer
-            img.enemy-img(:src="rustyKnightUrl" alt="Rusty Knight")
+          img.enemy-img(v-if="campaignC1" :src="rustyKnightUrl" alt="Rusty Knight" :style="{ left: enemyLeft }")
           .player-progress-zone
             .hover-radius(v-if="hoveredDgnProgress !== null" :style="{ left: hoveredDgnProgress + '%' }")
             .chest-token(v-for="chest in c1Chests" :key="chest.id" :style="{ left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
@@ -766,7 +778,6 @@ td.col-name {
   left: 0;
   top: 0;
   bottom: 0;
-  width: 19.25%; // enemy-buffer (5%) + 15% of player-zone (95% × 0.15)
   background: rgba(255, 131, 112, 0.42);
   pointer-events: none;
 }
@@ -899,10 +910,12 @@ td.col-name {
 }
 
 .enemy-img {
+  position: absolute;
+  top: 75%;
+  transform: translateX(-50%) translateY(-50%);
   width: 100px;
-  // width: 100%;
   height: auto;
-  display: block;
+  z-index: 10;
 }
 
 .class-area {
