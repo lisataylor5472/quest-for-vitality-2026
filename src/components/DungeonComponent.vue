@@ -28,7 +28,21 @@ function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
   return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
 }
 
-const campaignC1 = computed(() => store.campaigns.find((c) => c.id === 'c1') ?? null)
+const selectedCampaignId = ref<string>('c1')
+
+const activeCampaign = computed(
+  () => store.campaigns.find((c) => c.id === selectedCampaignId.value) ?? null,
+)
+
+/** Campaigns visible in the selector: start date is today or in the past,
+ *  plus a 1-week lookahead so the next campaign appears before it begins. */
+const visibleCampaigns = computed(() => {
+  const rawDate = store.gameState?.currentDate
+  const today = rawDate ? new Date(rawDate) : new Date()
+  const lookahead = new Date(today)
+  lookahead.setUTCDate(lookahead.getUTCDate() + 7)
+  return store.campaigns.filter((c) => c.start && new Date(c.start) <= lookahead)
+})
 
 const playerById = computed(() => {
   const map = new Map<string, (typeof store.players)[number]>()
@@ -65,12 +79,13 @@ function avatarSrc(img: string) {
 
 const CLASS_ORDER = ['ranger', 'cleric', 'druid', 'sorcerer', 'rogue', 'barbarian']
 
-const players = computed(() =>
-  store.players
-    .filter((p) => store.cmpgn1ByPlayer.has(p.playerId))
+const players = computed(() => {
+  const byPlayer = selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
+  return store.players
+    .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({
       ...p,
-      dgnProgress: store.cmpgn1ByPlayer.get(p.playerId)!.dgnProgress,
+      dgnProgress: byPlayer.get(p.playerId)!.dgnProgress,
     }))
     .sort((a, b) => {
       const ai = CLASS_ORDER.indexOf(a.class?.toLowerCase())
@@ -78,8 +93,8 @@ const players = computed(() =>
       const aRank = ai === -1 ? CLASS_ORDER.length : ai
       const bRank = bi === -1 ? CLASS_ORDER.length : bi
       return aRank - bRank
-    }),
-)
+    })
+})
 
 const groupedPlayers = computed(() => {
   const source = apFilter.value ? players.value.filter((p) => p.actionPoints > 0) : players.value
@@ -142,8 +157,10 @@ function chestItemNames(chest: {
     .map((key) => itemByNo.value.get(key) ?? key)
 }
 
-const c1Chests = computed(() => {
-  const visible = store.dungeonElements.filter((e) => e.campaign === 'c1' && e.visible)
+const activeChests = computed(() => {
+  const visible = store.dungeonElements.filter(
+    (e) => e.campaign === selectedCampaignId.value && e.visible,
+  )
   const groups = new Map<number, number>()
   return visible.map((chest) => {
     const stackIdx = groups.get(chest.location) ?? 0
@@ -171,15 +188,27 @@ const playersPositioned = computed(() => {
     })
 })
 
+const HYDRATION_REVEAL_DATE = '2026-04-05'
+
+const enemyRevealed = computed(() => {
+  const isHydration =
+    activeCampaign.value?.name?.toLowerCase().includes('hydration') ||
+    activeCampaign.value?.theme?.toLowerCase().includes('hydration')
+  if (!isHydration) return true
+  const rawDate = store.gameState?.currentDate
+  const today = rawDate ? rawDate : new Date().toISOString().slice(0, 10)
+  return today >= HYDRATION_REVEAL_DATE
+})
+
 const enemyLeftPercent = computed(() => {
-  const prog = Number(campaignC1.value?.enemyProg ?? 0)
+  const prog = Number(activeCampaign.value?.enemyProg ?? 0)
   return prog === 0 ? 2.5 : 5 + prog * 0.95
 })
 
 const enemyLeft = computed(() => `${enemyLeftPercent.value}%`)
 
 const dangerZoneWidth = computed(() => {
-  const dmgZone = Number(campaignC1.value?.enemyDmgZone ?? 16.75)
+  const dmgZone = Number(activeCampaign.value?.enemyDmgZone ?? 16.75)
   return `${enemyLeftPercent.value + dmgZone}%`
 })
 </script>
@@ -191,28 +220,34 @@ const dangerZoneWidth = computed(() => {
   .content-layout(v-else)
     .main-row
       .side-panel
-        .enemy-section(v-if="campaignC1")
+        .party-header
+          span Choose Dungeon
+        .dungeon-selector
+          select(v-model="selectedCampaignId")
+            option(v-for="c in visibleCampaigns" :key="c.id" :value="c.id") {{ c.name }}
+        .enemy-section(v-if="activeCampaign")
           .enemy-section-header(@click="enemyCollapsed = !enemyCollapsed")
             span.enemy-section-label ENEMY
             span.material-icons.collapse-icon {{ enemyCollapsed ? 'expand_more' : 'expand_less' }}
           .enemy-section-body(v-show="!enemyCollapsed")
-            span.enemy-name {{ campaignC1.enemy }}
+            span.enemy-name {{ enemyRevealed ? activeCampaign.enemy : '???' }}
             .enemy-block
-              img.enemy-section-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
+              img.enemy-section-img(v-if="enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy")
               .enemy-stats
                 .en-row
                   span.en-label HP
-                  span.en-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
+                  span.en-value {{ activeCampaign.enemyHp }}/{{ activeCampaign.enemyMaxHp }}
                 .en-row
                   span.en-label DMG
-                  span.en-value {{ campaignC1.enemyDmg }}
+                  span.en-value {{ activeCampaign.enemyDmg }}
                 .en-row
                   span.en-label DMG Zone
-                  span.en-value {{ campaignC1.enemyDmgZone }}%
+                  span.en-value {{ activeCampaign.enemyDmgZone }}%
                 .en-row
                   span.en-label Speed
-                  span.en-value {{ campaignC1.enemySpeed }}% per week
+                  span.en-value {{ activeCampaign.enemySpeed }}% per week
         .party-header
+          | PARTY
           .party-tabs
             button.party-tab(:class="{ active: rosterTab === 'roster' }" @click="rosterTab = 'roster'") Roster
             button.party-tab(:class="{ active: rosterTab === 'initiative' }" @click="rosterTab = 'initiative'") Initiative
@@ -265,10 +300,10 @@ const dangerZoneWidth = computed(() => {
         .dungeon-floor
           .danger-zone(:style="{ width: dangerZoneWidth }")
           .enemy-buffer
-          img.enemy-img(v-if="campaignC1" :src="rustyKnightUrl" alt="Rusty Knight" :style="{ left: enemyLeft }")
+          img.enemy-img(v-if="activeCampaign && enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy" :style="{ left: enemyLeft }")
           .player-progress-zone
             .hover-radius(v-if="hoveredDgnProgress !== null" :style="{ left: hoveredDgnProgress + '%' }")
-            .chest-token(v-for="chest in c1Chests" :key="chest.id" :style="{ left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
+            .chest-token(v-for="chest in activeChests" :key="chest.id" :style="{ left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
               img.chest-img(:src="chestSrc(chest.looted)" :alt="chest.item")
               .chest-tooltip(v-if="hoveredChestId === chest.id && chest.itemsRevealed" :class="chest.location < 50 ? 'tooltip-right' : 'tooltip-left'")
                 span.chest-tooltip-item(v-for="name in chestItemNames(chest)" :key="name") {{ name }}
@@ -276,15 +311,16 @@ const dangerZoneWidth = computed(() => {
               img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
         .class-area
           .universal-bar
-            span.universal-label ALL PLAYERS
-            .universal-divider
             span.universal-action
               span.universal-action-name Search Nearby Chest
               span.universal-action-detail  Standard — roll d6 · Legendary — roll d20
               span.universal-action-name Use Item
-              span.universal-action-detail  See item for cost - does not apply to immediate use or Buffs
+              span.universal-action-detail  See item for cost
+            span.universal-action
+              span.universal-action-name Basic Attack
+              span.universal-action-detail  Deal 1 damage to enemy - (must describe)
             .universal-divider
-            span.universal-ap-note Ability: 1AP (U.N.O.)
+            span.universal-ap-note All Actions 1 AP (unless noted otherwise)
           .class-info-row
             .class-card(v-for="c in classCards" :key="c.class" :class="`class-${c.class.toLowerCase()}`")
               .card-header {{ c.class }}
@@ -299,6 +335,11 @@ const dangerZoneWidth = computed(() => {
                     span.ability-name {{ c.ability2Name }}
                     span.ability-cost(v-if="c.ability2Cost > 1") {{ c.ability2Cost }} AP
                   p.ability-desc {{ c.ability2Desc }}
+                .ability(v-if="c.ability3Name")
+                  .ability-header
+                    span.ability-name {{ c.ability3Name }}
+                    span.ability-cost(v-if="c.ability3Cost && c.ability3Cost > 1") {{ c.ability3Cost }} AP
+                  p.ability-desc {{ c.ability3Desc }}
 </template>
 
 <style lang="scss" scoped>
@@ -350,7 +391,7 @@ const dangerZoneWidth = computed(() => {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  padding: 0.1rem 0.5rem 0.1rem 0.75rem;
   border-radius: 10px 10px 0 0;
   flex-shrink: 0;
   text-transform: uppercase;
@@ -1105,6 +1146,48 @@ td.col-name {
   line-height: 1.3;
 }
 
+.dungeon-selector {
+  padding: 0.6rem 0.75rem 0.9rem;
+  background-color: var(--theme-col-parchment-light);
+  border-radius: 0 0 14px 14px;
+  margin-bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dungeon-selector-label {
+  font-family: 'Grenze Gotisch', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--theme-col-lightest-blurple);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.dungeon-selector select {
+  width: 100%;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 2px solid var(--theme-col-parchment-dark);
+  background-color: var(--theme-col-parchment);
+  color: var(--theme-col-brown);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23815f5f' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  padding-right: 2rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--theme-col-med-blurple);
+  }
+}
+
 .enemy-section {
   flex: 0 0 auto;
   background-color: var(--theme-col-parchment-light);
@@ -1116,7 +1199,7 @@ td.col-name {
 .enemy-section-header {
   display: flex;
   align-items: center;
-  padding: 0.2rem 0.5rem;
+  padding: 0rem 0.5rem;
   cursor: pointer;
   // background-color: rgba(230, 83, 61, 0.34);
   color: var(--theme-col-white-mute);

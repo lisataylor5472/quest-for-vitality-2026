@@ -53,6 +53,18 @@ function enemySrc(img: string) {
   return new URL(`../assets/${img}`, import.meta.url).href
 }
 
+const HYDRATION_REVEAL_DATE = '2026-04-05'
+
+const enemyRevealed = computed(() => {
+  const isHydration =
+    activeCampaign.value?.name?.toLowerCase().includes('hydration') ||
+    activeCampaign.value?.theme?.toLowerCase().includes('hydration')
+  if (!isHydration) return true
+  const rawDate = store.gameState?.currentDate
+  const today = rawDate ? rawDate : new Date().toISOString().slice(0, 10)
+  return today >= HYDRATION_REVEAL_DATE
+})
+
 // ---------------------------------------------------------------------------
 // Sort state
 // null sortKey = default alphabetical by charName
@@ -91,16 +103,22 @@ function sortIcon(key: SortKey) {
 }
 
 // ---------------------------------------------------------------------------
-// Activity tracker — campaign c1 date range + per-player activity sets
+// Campaign selection toggle
+// ---------------------------------------------------------------------------
+const selectedCampaignId = ref<'c1' | 'c2'>('c1')
+
+// ---------------------------------------------------------------------------
+// Activity tracker — selected campaign date range + per-player activity sets
 // ---------------------------------------------------------------------------
 
-/** The campaign with id 'c1', used for its start/end date range. */
-const campaignC1 = computed(() => store.campaigns.find((c) => c.id === 'c1') ?? null)
+/** The currently selected campaign object. */
+const activeCampaign = computed(() =>
+  store.campaigns.find((c) => c.id === selectedCampaignId.value) ?? null,
+)
 
-/** All ISO date strings (YYYY-MM-DD) spanning the c1 campaign.
- *  start/end may be full ISO datetimes; we normalize to UTC midnight before iterating. */
+/** All ISO date strings (YYYY-MM-DD) spanning the active campaign. */
 const campaignDays = computed<string[]>(() => {
-  const c = campaignC1.value
+  const c = activeCampaign.value
   if (!c?.start || !c?.end) return []
   const days: string[] = []
   const cur = new Date(c.start)
@@ -131,9 +149,13 @@ function formatDayTooltip(isoDate: string): string {
 /** Activity dates as Sets per player for O(1) has() lookups.
  *  Normalizes to YYYY-MM-DD in case activeDay is a full ISO datetime string. */
 const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
+  const source = selectedCampaignId.value === 'c2' ? store.plyrActivity2 : store.plyrActivity
   const map = new Map<string, Set<string>>()
-  for (const [playerId, days] of store.activityByPlayer) {
-    map.set(playerId, new Set(days.map((d) => d.slice(0, 10))))
+  for (const entry of source) {
+    if (!entry.playerId || !entry.activeDay) continue
+    const set = map.get(entry.playerId) ?? new Set<string>()
+    set.add(entry.activeDay.slice(0, 10))
+    map.set(entry.playerId, set)
   }
   return map
 })
@@ -142,11 +164,12 @@ const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
 // Joined rows: players + cmpgn1 progress, sorted
 // ---------------------------------------------------------------------------
 const displayedRows = computed(() => {
+  const byPlayer = selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
   const rows = store.players
-    .filter((player) => store.cmpgn1ByPlayer.has(player.playerId))
+    .filter((player) => byPlayer.has(player.playerId))
     .map((player) => ({
       ...player,
-      ...store.cmpgn1ByPlayer.get(player.playerId)!,
+      ...byPlayer.get(player.playerId)!,
     }))
 
   if (!sortKey.value) {
@@ -167,9 +190,14 @@ const displayedRows = computed(() => {
   .content-layout(v-else)
     .top-bar
       .campaigns-button-wrapper
-        button.c1 flexibility
-        button.active.c2
-          span.material-icons hourglass_empty
+        button.c1(
+          :class="{ active: selectedCampaignId === 'c1' }"
+          @click="selectedCampaignId = 'c1'"
+        ) flexibility
+        button.c2(
+          :class="{ active: selectedCampaignId === 'c2' }"
+          @click="selectedCampaignId = 'c2'"
+        ) hydration
         button.active.c3
           span.material-icons hourglass_empty
         button.active.c4
@@ -180,44 +208,44 @@ const displayedRows = computed(() => {
           span.material-icons hourglass_empty
     .main-row
       .side-panel
-        .quest-info-wrapper(v-if="campaignC1")
+        .quest-info-wrapper(v-if="activeCampaign")
           .qi-header
-            h2.qi-name {{ campaignC1.name }}
+            h2.qi-name {{ activeCampaign.name }}
           .qi-body
             .qi-row
               span.qi-label Start
-              span.qi-value {{ formatDate(campaignC1.start) }}
+              span.qi-value {{ formatDate(activeCampaign.start) }}
             .qi-row
               span.qi-label End
-              span.qi-value {{ formatDate(campaignC1.end) }}
+              span.qi-value {{ formatDate(activeCampaign.end) }}
             //- .qi-row
             //-   span.qi-label Days
-            //-   span.qi-value {{ campaignC1.days }}
+            //-   span.qi-value {{ activeCampaign.days }}
             .qi-row.qi-row--stacked
               span.qi-label Quest
-              span.qi-value {{ campaignC1.questAction }}
+              span.qi-value {{ activeCampaign.questAction }}
             .qi-row
               span.qi-label Times Per week
-              span.qi-value {{ campaignC1.timesPerWeek }}x
+              span.qi-value {{ activeCampaign.timesPerWeek }}x
             .qi-row.qi-row--stacked
               span.qi-label Reward
-              span.qi-value {{ campaignC1.reward }}
-              span.qi-desc(v-if="campaignC1.rewardDesc") {{ campaignC1.rewardDesc }}
+              span.qi-value {{ activeCampaign.reward }}
+              span.qi-desc(v-if="activeCampaign.rewardDesc") {{ activeCampaign.rewardDesc }}
             .qi-enemy-block
-              img.qi-enemy-img(:src="enemySrc(campaignC1.enemyImg)" :alt="campaignC1.enemy")
+              img.qi-enemy-img(v-if="enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy")
             .qi-row
               span.qi-label Threat
-              span.qi-value {{ campaignC1.enemy }}
+              span.qi-value {{ enemyRevealed ? activeCampaign.enemy : '???' }}
             .qi-row
               span.qi-label HP
-              span.qi-value {{ campaignC1.enemyHp }}/{{ campaignC1.enemyMaxHp }}
+              span.qi-value {{ activeCampaign.enemyHp }}/{{ activeCampaign.enemyMaxHp }}
               //- .qi-enemy-stats
               //-   //- .qi-row.qi-row--stacked
               //-   //-   span.qi-label Speed
-              //-   //-   span.qi-value {{ campaignC1.enemySpeed }}% per week
+              //-   //-   span.qi-value {{ activeCampaign.enemySpeed }}% per week
               //-   .qi-row.qi-row--stacked
               //-     span.qi-label Dmg
-              //-     span.qi-value {{ campaignC1.enemyDmg }}
+              //-     span.qi-value {{ activeCampaign.enemyDmg }}
 
 
       .table-scroll-wrapper

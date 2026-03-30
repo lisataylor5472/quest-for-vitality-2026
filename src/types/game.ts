@@ -25,6 +25,9 @@ export interface ClassInfo {
   ability2Cost: number
   ability2Name: string
   ability2Desc: string
+  ability3Cost?: number
+  ability3Name?: string
+  ability3Desc?: string
 }
 
 export interface Campaign {
@@ -140,7 +143,9 @@ export interface ApiResponse {
   players: Player[]
   achievements: Achievement[]
   cmpgn1: CampaignProgress[]
+  cmpgn2: CampaignProgress[]
   plyrActivity: PlayerActivity[]
+  plyrActivity2: PlayerActivity[]
   dungeonElements: DungeonElement[]
   items: GameItem[]
   initiativeOrder: InitiativeOrder[]
