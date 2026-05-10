@@ -85,7 +85,7 @@ onUnmounted(() => {
             img.flag-unrolled(v-if="true" src="@/assets/flags/hydration-flag.svg" alt="Hydration Dungeon Flag")
             img(v-else src="@/assets/flags/rolled-flag-hydration.svg" alt="Hydration Dungeon Flag")
           .adventure-flag
-            img.flag-unrolled(v-if="false" src="@/assets/flags/cardio-flag.svg" alt="Cardio Dungeon Flag")
+            img.flag-unrolled(v-if="true" src="@/assets/flags/cardio-flag.svg" alt="Cardio Dungeon Flag")
             img(v-else src="@/assets/flags/rolled-flag-cardio.svg" alt="Future Dungeon Flag")
           .adventure-flag
             img.flag-unrolled(v-if="false" src="@/assets/flags/sleep-flag.svg")

@@ -91,11 +91,20 @@ export interface CampaignProgress {
   dgnProgress: number
   cmpgnProgress: number
   success: number
+  totalXp?: number
   weeklyWinCount: number
   w1Count: number
+  w1Prog?: number
+  w1XpMod?: number
   w2Count: number
+  w2Prog?: number
+  w2XpMod?: number
   w3Count: number
+  w3Prog?: number
+  w3XpMod?: number
   w4Count: number
+  w4Prog?: number
+  w4XpMod?: number
 }
 
 // Raw activity log row. Rows with an empty playerId are padding/rest days and
@@ -144,8 +153,10 @@ export interface ApiResponse {
   achievements: Achievement[]
   cmpgn1: CampaignProgress[]
   cmpgn2: CampaignProgress[]
+  cmpgn3: CampaignProgress[]
   plyrActivity: PlayerActivity[]
   plyrActivity2: PlayerActivity[]
+  plyrActivity3: PlayerActivity[]
   dungeonElements: DungeonElement[]
   items: GameItem[]
   initiativeOrder: InitiativeOrder[]

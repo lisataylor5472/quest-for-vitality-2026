@@ -80,7 +80,7 @@ function avatarSrc(img: string) {
 const CLASS_ORDER = ['ranger', 'cleric', 'druid', 'sorcerer', 'rogue', 'barbarian']
 
 const players = computed(() => {
-  const byPlayer = selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
+  const byPlayer = selectedCampaignId.value === 'c3' ? store.cmpgn3ByPlayer : selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
   return store.players
     .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({
@@ -297,7 +297,7 @@ const dangerZoneWidth = computed(() => {
                               .item-slot-tooltip(v-if="itemEffectByNo.get(p.itemSlot2)") {{ itemEffectByNo.get(p.itemSlot2) }}
                             span.item-slot-empty(v-else) [ ... ]
       .main-content
-        .dungeon-floor
+        .dungeon-floor(:class="{ ocean: selectedCampaignId === 'c3' }")
           .danger-zone(:style="{ width: dangerZoneWidth }")
           .enemy-buffer
           img.enemy-img(v-if="activeCampaign && enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy" :style="{ left: enemyLeft }")
@@ -811,6 +811,14 @@ td.col-name {
     background-size: 20% auto;
     opacity: 0.4;
     pointer-events: none;
+  }
+
+  &.ocean::before {
+    background-image: url('../assets/waves.svg');
+    background-color: #1a4a7a;
+    background-blend-mode: multiply;
+    background-size: 15% auto;
+    opacity: 0.85;
   }
 }
 

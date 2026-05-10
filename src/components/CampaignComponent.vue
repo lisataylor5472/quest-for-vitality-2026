@@ -105,7 +105,7 @@ function sortIcon(key: SortKey) {
 // ---------------------------------------------------------------------------
 // Campaign selection toggle
 // ---------------------------------------------------------------------------
-const selectedCampaignId = ref<'c1' | 'c2'>('c1')
+const selectedCampaignId = ref<'c1' | 'c2' | 'c3'>('c1')
 
 // ---------------------------------------------------------------------------
 // Activity tracker — selected campaign date range + per-player activity sets
@@ -149,7 +149,7 @@ function formatDayTooltip(isoDate: string): string {
 /** Activity dates as Sets per player for O(1) has() lookups.
  *  Normalizes to YYYY-MM-DD in case activeDay is a full ISO datetime string. */
 const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
-  const source = selectedCampaignId.value === 'c2' ? store.plyrActivity2 : store.plyrActivity
+  const source = selectedCampaignId.value === 'c3' ? store.plyrActivity3 : selectedCampaignId.value === 'c2' ? store.plyrActivity2 : store.plyrActivity
   const map = new Map<string, Set<string>>()
   for (const entry of source) {
     if (!entry.playerId || !entry.activeDay) continue
@@ -164,7 +164,7 @@ const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
 // Joined rows: players + cmpgn1 progress, sorted
 // ---------------------------------------------------------------------------
 const displayedRows = computed(() => {
-  const byPlayer = selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
+  const byPlayer = selectedCampaignId.value === 'c3' ? store.cmpgn3ByPlayer : selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
   const rows = store.players
     .filter((player) => byPlayer.has(player.playerId))
     .map((player) => ({
@@ -198,8 +198,10 @@ const displayedRows = computed(() => {
           :class="{ active: selectedCampaignId === 'c2' }"
           @click="selectedCampaignId = 'c2'"
         ) hydration
-        button.active.c3
-          span.material-icons hourglass_empty
+        button.c3(
+          :class="{ active: selectedCampaignId === 'c3' }"
+          @click="selectedCampaignId = 'c3'"
+        ) cardio
         button.active.c4
           span.material-icons hourglass_empty
         button.active.c5

@@ -24,8 +24,10 @@ export const useGameStore = defineStore('game', () => {
   const players = ref<Player[]>([])
   const cmpgn1 = ref<CampaignProgress[]>([])
   const cmpgn2 = ref<CampaignProgress[]>([])
+  const cmpgn3 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
   const plyrActivity2 = ref<PlayerActivity[]>([])
+  const plyrActivity3 = ref<PlayerActivity[]>([])
   const achievements = ref<Achievement[]>([])
   const dungeonElements = ref<DungeonElement[]>([])
   const items = ref<GameItem[]>([])
@@ -96,6 +98,14 @@ export const useGameStore = defineStore('game', () => {
     return map
   })
 
+  const cmpgn3ByPlayer = computed<Map<string, CampaignProgress>>(() => {
+    const map = new Map<string, CampaignProgress>()
+    for (const row of cmpgn3.value) {
+      if (row.playerId) map.set(row.playerId, row)
+    }
+    return map
+  })
+
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
@@ -113,8 +123,10 @@ export const useGameStore = defineStore('game', () => {
       players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
       cmpgn2.value = data.cmpgn2 ?? []
+      cmpgn3.value = data.cmpgn3 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
+      plyrActivity3.value = data.plyrActivity3 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -138,8 +150,10 @@ export const useGameStore = defineStore('game', () => {
       players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
       cmpgn2.value = data.cmpgn2 ?? []
+      cmpgn3.value = data.cmpgn3 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
+      plyrActivity3.value = data.plyrActivity3 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -160,8 +174,10 @@ export const useGameStore = defineStore('game', () => {
     players,
     cmpgn1,
     cmpgn2,
+    cmpgn3,
     plyrActivity,
     plyrActivity2,
+    plyrActivity3,
     achievements,
     dungeonElements,
     items,
@@ -175,6 +191,7 @@ export const useGameStore = defineStore('game', () => {
     activityByPlayer,
     cmpgn1ByPlayer,
     cmpgn2ByPlayer,
+    cmpgn3ByPlayer,
     // actions
     fetchData,
     quietRefresh,
