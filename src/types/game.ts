@@ -16,18 +16,28 @@ export interface DashboardEntry {
   cmpgnWeek: number | string // 1–4, or "" when not yet set
 }
 
+export interface AbilityDice {
+  floor: number
+  qty: number
+  sides: number
+  tiered?: boolean
+}
+
 export interface ClassInfo {
   class: string
   ability1Cost: number
   ability1Name: string
   ability1Desc: string
   ability1DescExpanded: string
+  ability1Dice?: AbilityDice
   ability2Cost: number
   ability2Name: string
   ability2Desc: string
+  ability2Dice?: AbilityDice
   ability3Cost?: number
   ability3Name?: string
   ability3Desc?: string
+  ability3Dice?: AbilityDice
 }
 
 export interface Campaign {

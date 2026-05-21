@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type {
+  AbilityDice,
   Achievement,
   ApiResponse,
   Campaign,
@@ -13,6 +14,33 @@ import type {
   Player,
   PlayerActivity,
 } from '@/types/game'
+
+function parseDice(desc: string): AbilityDice | undefined {
+  const withFloor = desc.match(/(\d+)\s*\+\s*(?:Roll\s+)?(\d+)d(\d+)/)
+  if (withFloor) {
+    return { floor: parseInt(withFloor[1]!), qty: parseInt(withFloor[2]!), sides: parseInt(withFloor[3]!) }
+  }
+  const bare = desc.match(/(\d+)d(\d+)/)
+  if (bare) {
+    return { floor: 0, qty: parseInt(bare[1]!), sides: parseInt(bare[2]!) }
+  }
+  return undefined
+}
+
+function enrichClassInfo(raw: ClassInfo[]): ClassInfo[] {
+  return raw.map((c) => {
+    const ability2Dice = c.ability2Desc ? parseDice(c.ability2Desc) : undefined
+    return {
+      ...c,
+      ability1Dice: c.ability1Desc ? parseDice(c.ability1Desc) : undefined,
+      ability2Dice:
+        ability2Dice && c.class.toLowerCase() === 'sorcerer'
+          ? { ...ability2Dice, tiered: true }
+          : ability2Dice,
+      ability3Dice: c.ability3Desc ? parseDice(c.ability3Desc) : undefined,
+    }
+  })
+}
 
 export const useGameStore = defineStore('game', () => {
   // ---------------------------------------------------------------------------
@@ -35,6 +63,8 @@ export const useGameStore = defineStore('game', () => {
 
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const pendingRoll = ref<AbilityDice | null>(null)
+  const sneakAttack = ref(false)
 
   // ---------------------------------------------------------------------------
   // Getters
@@ -118,7 +148,7 @@ export const useGameStore = defineStore('game', () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: ApiResponse = await res.json()
       dashboard.value = data.dashboard
-      classInfo.value = data.classInfo
+      classInfo.value = enrichClassInfo(data.classInfo)
       campaigns.value = data.campaigns
       players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
@@ -145,7 +175,7 @@ export const useGameStore = defineStore('game', () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: ApiResponse = await res.json()
       dashboard.value = data.dashboard
-      classInfo.value = data.classInfo
+      classInfo.value = enrichClassInfo(data.classInfo)
       campaigns.value = data.campaigns
       players.value = data.players.filter((p) => !!p.playerId)
       cmpgn1.value = data.cmpgn1
@@ -192,8 +222,12 @@ export const useGameStore = defineStore('game', () => {
     cmpgn1ByPlayer,
     cmpgn2ByPlayer,
     cmpgn3ByPlayer,
+    pendingRoll,
+    sneakAttack,
     // actions
     fetchData,
     quietRefresh,
+    requestRoll(dice: AbilityDice) { pendingRoll.value = dice },
+    clearPendingRoll() { pendingRoll.value = null },
   }
 })

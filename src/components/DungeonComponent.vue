@@ -117,6 +117,10 @@ const classCards = computed(() =>
   }),
 )
 
+function rollAbility(dice: import('@/types/game').AbilityDice | undefined) {
+  if (dice) store.requestRoll(dice)
+}
+
 const AVATAR_STEP_REM = 1.8
 
 const hoveredDgnProgress = computed(() => {
@@ -327,18 +331,30 @@ const dangerZoneWidth = computed(() => {
               .card-body
                 .ability
                   .ability-header
-                    span.ability-name {{ c.ability1Name }}
+                    span.ability-name(:class="{ 'ability-name--rollable': c.ability1Dice }" @click="rollAbility(c.ability1Dice)") {{ c.ability1Name }}
                     span.ability-cost(v-if="c.ability1Cost > 1") {{ c.ability1Cost }} AP
+                    label.toggle-dial(v-if="c.ability1Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
+                      input(type="checkbox" v-model="store.sneakAttack")
+                      span.toggle-track
+                        span.toggle-knob
                   p.ability-desc {{ c.ability1Desc }}
                 .ability
                   .ability-header
-                    span.ability-name {{ c.ability2Name }}
+                    span.ability-name(:class="{ 'ability-name--rollable': c.ability2Dice }" @click="rollAbility(c.ability2Dice)") {{ c.ability2Name }}
                     span.ability-cost(v-if="c.ability2Cost > 1") {{ c.ability2Cost }} AP
+                    label.toggle-dial(v-if="c.ability2Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
+                      input(type="checkbox" v-model="store.sneakAttack")
+                      span.toggle-track
+                        span.toggle-knob
                   p.ability-desc {{ c.ability2Desc }}
                 .ability(v-if="c.ability3Name")
                   .ability-header
-                    span.ability-name {{ c.ability3Name }}
+                    span.ability-name(:class="{ 'ability-name--rollable': c.ability3Dice }" @click="rollAbility(c.ability3Dice)") {{ c.ability3Name }}
                     span.ability-cost(v-if="c.ability3Cost && c.ability3Cost > 1") {{ c.ability3Cost }} AP
+                    label.toggle-dial(v-if="c.ability3Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
+                      input(type="checkbox" v-model="store.sneakAttack")
+                      span.toggle-track
+                        span.toggle-knob
                   p.ability-desc {{ c.ability3Desc }}
 </template>
 
@@ -1134,6 +1150,16 @@ td.col-name {
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--theme-col-blurple);
+
+  &--rollable {
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+
+    &:hover {
+      opacity: 0.75;
+    }
+  }
 }
 
 .ability-cost {
@@ -1152,6 +1178,51 @@ td.col-name {
   font-size: 0.8rem;
   color: var(--theme-col-brown-light);
   line-height: 1.3;
+}
+
+.toggle-dial {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-left: auto;
+
+  input {
+    display: none;
+  }
+}
+
+.toggle-track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2.2rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  .toggle-dial input:checked ~ & {
+    background: var(--theme-col-blurple);
+    border-color: var(--theme-col-blurple);
+  }
+}
+
+.toggle-knob {
+  position: absolute;
+  left: 0.15rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+
+  .toggle-dial input:checked ~ .toggle-track & {
+    transform: translateX(1rem);
+  }
 }
 
 .dungeon-selector {
