@@ -94,7 +94,12 @@ function avatarSrc(img: string) {
 const CLASS_ORDER = ['ranger', 'cleric', 'druid', 'sorcerer', 'rogue', 'barbarian']
 
 const players = computed(() => {
-  const byPlayer = selectedCampaignId.value === 'c3' ? store.cmpgn3ByPlayer : selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
+  const byPlayer =
+    selectedCampaignId.value === 'c3'
+      ? store.cmpgn3ByPlayer
+      : selectedCampaignId.value === 'c2'
+        ? store.cmpgn2ByPlayer
+        : store.cmpgn1ByPlayer
   return store.players
     .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({
@@ -337,8 +342,6 @@ const dangerZoneWidth = computed(() => {
             span.universal-action
               span.universal-action-name Basic Attack
               span.universal-action-detail  Deal 1 damage to enemy - (must describe)
-            .universal-divider
-            span.universal-ap-note All Actions 1 AP (unless noted otherwise)
           .class-info-row
             .class-card(v-for="c in classCards" :key="c.class" :class="`class-${c.class.toLowerCase()}`")
               .card-header {{ c.class }}
@@ -362,6 +365,9 @@ const dangerZoneWidth = computed(() => {
                     span.ability-name(:class="{ 'ability-name--rollable': c.ability3Dice }" @click="rollAbility(c.ability3Dice)") {{ c.ability3Name }}
                     span.ability-cost(v-if="c.ability3Cost && c.ability3Cost > 1") {{ c.ability3Cost }} AP
                   p.ability-desc {{ c.ability3Desc }}
+                      span.universal-ap-note All Actions 1 AP (unless noted otherwise)
+        span.universal-ap-note All Actions 1 AP (unless noted otherwise)
+
 Teleport(to="body")
   .initiative-items-tooltip(
     v-if="initiativeHoverPlayer"
@@ -484,7 +490,6 @@ Teleport(to="body")
   padding: 0.2rem 0.5rem;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.82rem;
-
 
   &.class-ranger {
     background-color: rgba(40, 100, 200, 0.15);
@@ -877,7 +882,7 @@ td.col-name {
 }
 
 .dungeon-floor {
-  --floor-height: 35vh;
+  --floor-height: 32vh;
   flex: none;
   min-width: 0;
   border-radius: 20px;
@@ -1136,7 +1141,7 @@ td.col-name {
 }
 
 .universal-action {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   flex-shrink: 0;
 }
 
@@ -1147,7 +1152,7 @@ td.col-name {
 
 .universal-action-detail {
   color: var(--theme-col-brown-light);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   margin-right: 1em;
 }
 
@@ -1246,7 +1251,7 @@ td.col-name {
 
 .ability-desc {
   margin: 0.15rem 0 0;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--theme-col-brown-light);
   line-height: 1.3;
 }

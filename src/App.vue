@@ -137,12 +137,13 @@ onUnmounted(() => {
     button {
       border: 2px solid var(--theme-col-blurple);
       width: 150px;
-      font-size: 1.4rem;
+      height: 2.2rem;
+      font-size: 1.1rem;
       font-family: 'Grenze Gotisch', serif;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding-bottom: 4px;
+      padding-bottom: 3px;
       cursor: pointer;
       transition:
         transform 0.1s ease,
@@ -175,8 +176,8 @@ onUnmounted(() => {
   }
 
   .refresh-btn {
-    width: 2.8rem;
-    height: 2.8rem;
+    width: 2.2rem;
+    height: 2.2rem;
     border-radius: 50%;
     border: 2px solid var(--theme-col-blurple);
     background: #d0d6ff;

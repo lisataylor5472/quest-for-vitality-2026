@@ -245,7 +245,7 @@ Teleport(to="body")
   right: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  height: 2.8rem;
+  height: 2.2rem;
   margin-right: 10rem;
   display: flex;
   align-items: center;
@@ -279,7 +279,7 @@ Teleport(to="body")
 
 .seg-label {
   font-family: 'Grenze Gotisch', serif;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   color: var(--theme-col-blurple);
   white-space: nowrap;
   padding-bottom: 2px;
@@ -295,13 +295,13 @@ Teleport(to="body")
     text-align: center;
     color: var(--theme-col-dark-blurple);
     font-family: 'Grenze Gotisch', serif;
-    font-size: 1.2rem;
+    font-size: 1rem;
     padding-bottom: 2px;
   }
 
   button {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.1rem;
+    height: 1.1rem;
     padding: 0;
     display: flex;
     align-items: center;
@@ -310,7 +310,7 @@ Teleport(to="body")
     color: var(--theme-col-blurple);
     border: none;
     font-family: 'Grenze Gotisch', serif;
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1;
     cursor: pointer;
     opacity: 0.6;
@@ -333,9 +333,9 @@ Teleport(to="body")
   background: #d0d6ff;
   color: var(--theme-col-blurple);
   font-family: 'Grenze Gotisch', serif;
-  font-size: 1.4rem;
-  padding: 0 1.2rem;
-  padding-bottom: 4px;
+  font-size: 1.1rem;
+  padding: 0 1rem;
+  padding-bottom: 3px;
   height: 100%;
   min-width: 100px;
   cursor: pointer;
@@ -671,11 +671,12 @@ Teleport(to="body")
   background: #d0d6ff;
   color: var(--theme-col-blurple);
   font-family: 'Grenze Gotisch', serif;
-  font-size: 1.4rem;
-  padding: 0 1.2rem;
-  padding-bottom: 4px;
+  font-size: 1.1rem;
+  padding: 0 1rem;
+  padding-bottom: 3px;
   height: 100%;
   cursor: pointer;
+  box-shadow: 1px 1px 0px 1px var(--theme-col-blurple);
   transition: background 0.15s ease;
 
   &:hover {
