@@ -131,8 +131,8 @@ const classCards = computed(() =>
   }),
 )
 
-function rollAbility(dice: import('@/types/game').AbilityDice | undefined) {
-  if (dice) store.requestRoll(dice)
+function rollAbility(dice: import('@/types/game').AbilityDice | undefined, sneakAttack = false) {
+  if (dice) store.requestRoll(sneakAttack ? { ...dice, sneakAttack: true } : dice)
 }
 
 const AVATAR_STEP_REM = 1.8
@@ -347,16 +347,12 @@ const dangerZoneWidth = computed(() => {
                   .ability-header
                     span.ability-name(:class="{ 'ability-name--rollable': c.ability1Dice }" @click="rollAbility(c.ability1Dice)") {{ c.ability1Name }}
                     span.ability-cost(v-if="c.ability1Cost > 1") {{ c.ability1Cost }} AP
-                    label.toggle-dial(v-if="c.ability1Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
-                      input(type="checkbox" v-model="store.sneakAttack")
-                      span.toggle-track
-                        span.toggle-knob
                   p.ability-desc {{ c.ability1Desc }}
                 .ability
                   .ability-header
-                    span.ability-name(:class="{ 'ability-name--rollable': c.ability2Dice }" @click="rollAbility(c.ability2Dice)") {{ c.ability2Name }}
+                    span.ability-name(:class="{ 'ability-name--rollable': c.ability2Dice }" @click="rollAbility(c.ability2Dice, c.class.toLowerCase() === 'rogue' && store.sneakAttack)") {{ c.ability2Name }}
                     span.ability-cost(v-if="c.ability2Cost > 1") {{ c.ability2Cost }} AP
-                    label.toggle-dial(v-if="c.ability2Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
+                    label.toggle-dial(v-if="c.class.toLowerCase() === 'rogue' && c.ability2Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
                       input(type="checkbox" v-model="store.sneakAttack")
                       span.toggle-track
                         span.toggle-knob
@@ -365,10 +361,6 @@ const dangerZoneWidth = computed(() => {
                   .ability-header
                     span.ability-name(:class="{ 'ability-name--rollable': c.ability3Dice }" @click="rollAbility(c.ability3Dice)") {{ c.ability3Name }}
                     span.ability-cost(v-if="c.ability3Cost && c.ability3Cost > 1") {{ c.ability3Cost }} AP
-                    label.toggle-dial(v-if="c.ability3Name?.toLowerCase().includes('sneak attack')" title="toggle sneak attack")
-                      input(type="checkbox" v-model="store.sneakAttack")
-                      span.toggle-track
-                        span.toggle-knob
                   p.ability-desc {{ c.ability3Desc }}
 Teleport(to="body")
   .initiative-items-tooltip(

@@ -19,6 +19,7 @@ const selectedDie = ref(20)
 const qty = ref(1)
 const floorVal = ref(5)
 const huntersMark = ref(0)
+const applySneakAttack = ref(false)
 
 const displayNumber = ref<number | null>(null)
 const displayNumbers = ref<number[]>([])
@@ -31,7 +32,10 @@ const tierDamage = ref<number | null>(null)
 
 const activeTier = computed(() => {
   if (!isTiered.value || displayNumber.value === null) return null
-  return SORCERER_TIERS.find((t) => displayNumber.value! >= t.min && displayNumber.value! <= t.max) ?? null
+  return (
+    SORCERER_TIERS.find((t) => displayNumber.value! >= t.min && displayNumber.value! <= t.max) ??
+    null
+  )
 })
 
 const wrapperEl = ref<HTMLElement | null>(null)
@@ -115,7 +119,7 @@ function roll(sides: number) {
       } else {
         isFloored.value = floorVal.value > 0
         finalTotal.value =
-          rawTotal + floorVal.value + huntersMark.value * 3 + (store.sneakAttack ? 5 : 0)
+          rawTotal + floorVal.value + huntersMark.value * 3 + (applySneakAttack.value ? 5 : 0)
       }
       rolling.value = false
     }
@@ -129,7 +133,7 @@ const adderParts = computed((): AdderPart[] => {
   if (isFloored.value) parts.push({ num: String(floorVal.value), label: 'base', type: 'base' })
   if (huntersMark.value > 0)
     parts.push({ num: String(huntersMark.value * 3), label: "hunter's mark", type: 'hunters-mark' })
-  if (store.sneakAttack) parts.push({ num: '5', label: 'sneak attack', type: 'sneak-attack' })
+  if (applySneakAttack.value) parts.push({ num: '5', label: 'sneak attack', type: 'sneak-attack' })
   return parts
 })
 
@@ -154,6 +158,7 @@ watch(
     qty.value = dice.qty
     floorVal.value = dice.floor
     isTiered.value = !!dice.tiered
+    applySneakAttack.value = !!dice.sneakAttack
     tierDamage.value = null
     store.clearPendingRoll()
     roll(dice.sides)
@@ -455,7 +460,7 @@ Teleport(to="body")
   font-size: 1.7rem;
   color: var(--theme-col-med-green);
   letter-spacing: 0.2em;
-  text-transform: uppercase;
+  // text-transform: uppercase;
   opacity: 0.7;
   align-self: flex-start;
 }
@@ -808,22 +813,43 @@ Teleport(to="body")
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: #ff4db8;
-    text-shadow: 0 0 18px rgba(255, 77, 184, 0.9), 0 0 36px rgba(255, 77, 184, 0.4);
+    text-shadow:
+      0 0 18px rgba(255, 77, 184, 0.9),
+      0 0 36px rgba(255, 77, 184, 0.4);
     opacity: 0;
     animation: wild-surge-pop 1.2s ease-in-out infinite;
 
-    &:nth-child(1) { animation-delay: 0s; }
-    &:nth-child(2) { animation-delay: 0.4s; }
-    &:nth-child(3) { animation-delay: 0.8s; }
+    &:nth-child(1) {
+      animation-delay: 0s;
+    }
+    &:nth-child(2) {
+      animation-delay: 0.4s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.8s;
+    }
   }
 }
 
 @keyframes wild-surge-pop {
-  0%   { opacity: 0; transform: scaleX(0.85); }
-  12%  { opacity: 1; transform: scaleX(1.04); }
-  28%  { opacity: 1; transform: scaleX(1); }
-  42%  { opacity: 0; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+    transform: scaleX(0.85);
+  }
+  12% {
+    opacity: 1;
+    transform: scaleX(1.04);
+  }
+  28% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  42% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes number-flicker {

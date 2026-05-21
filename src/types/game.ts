@@ -21,6 +21,7 @@ export interface AbilityDice {
   qty: number
   sides: number
   tiered?: boolean
+  sneakAttack?: boolean
 }
 
 export interface ClassInfo {
