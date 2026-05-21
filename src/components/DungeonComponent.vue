@@ -10,6 +10,20 @@ const chestOpenUrl = new URL('../assets/chest-open.svg', import.meta.url).href
 const store = useGameStore()
 
 const hoveredPlayerId = ref<string | null>(null)
+const initiativeHoverPlayer = ref<(typeof store.players)[number] | null>(null)
+const initiativeTooltipPos = ref({ x: 0, y: 0 })
+
+function onInitiativeEnter(e: MouseEvent, p: (typeof store.players)[number]) {
+  hoveredPlayerId.value = p.playerId
+  initiativeHoverPlayer.value = p
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  initiativeTooltipPos.value = { x: rect.left, y: rect.top }
+}
+
+function onInitiativeLeave() {
+  hoveredPlayerId.value = null
+  initiativeHoverPlayer.value = null
+}
 const collapsedGroups = ref(new Set<string>())
 const expandedPlayers = ref(new Set<string>())
 const enemyCollapsed = ref(false)
@@ -28,7 +42,7 @@ function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
   return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
 }
 
-const selectedCampaignId = ref<string>('c1')
+const selectedCampaignId = ref<string>('c3')
 
 const activeCampaign = computed(
   () => store.campaigns.find((c) => c.id === selectedCampaignId.value) ?? null,
@@ -259,7 +273,7 @@ const dangerZoneWidth = computed(() => {
             span.material-icons campaign
         .player-roster
           .initiative-list(v-if="rosterTab === 'initiative'")
-            .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null")
+            .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="onInitiativeEnter($event, p)" @mouseleave="onInitiativeLeave()")
               span.initiative-num {{ i + 1 }}
               img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
               span.initiative-name {{ p.charName }}
@@ -356,6 +370,19 @@ const dangerZoneWidth = computed(() => {
                       span.toggle-track
                         span.toggle-knob
                   p.ability-desc {{ c.ability3Desc }}
+Teleport(to="body")
+  .initiative-items-tooltip(
+    v-if="initiativeHoverPlayer"
+    :style="{ left: initiativeTooltipPos.x + 'px', top: initiativeTooltipPos.y + 'px', transform: 'translateY(calc(-100% - 8px))' }"
+  )
+    template(v-if="initiativeHoverPlayer.itemSlot1 || initiativeHoverPlayer.itemSlot2")
+      .initiative-tooltip-item(v-if="initiativeHoverPlayer.itemSlot1")
+        span.initiative-tooltip-item-name {{ itemByNo.get(initiativeHoverPlayer.itemSlot1) ?? initiativeHoverPlayer.itemSlot1 }}
+        span.initiative-tooltip-item-effect(v-if="itemEffectByNo.get(initiativeHoverPlayer.itemSlot1)") {{ itemEffectByNo.get(initiativeHoverPlayer.itemSlot1) }}
+      .initiative-tooltip-item(v-if="initiativeHoverPlayer.itemSlot2")
+        span.initiative-tooltip-item-name {{ itemByNo.get(initiativeHoverPlayer.itemSlot2) ?? initiativeHoverPlayer.itemSlot2 }}
+        span.initiative-tooltip-item-effect(v-if="itemEffectByNo.get(initiativeHoverPlayer.itemSlot2)") {{ itemEffectByNo.get(initiativeHoverPlayer.itemSlot2) }}
+    span.initiative-tooltip-empty(v-else) No items
 </template>
 
 <style lang="scss" scoped>
@@ -458,12 +485,14 @@ const dangerZoneWidth = computed(() => {
 }
 
 .initiative-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.2rem 0.5rem;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.82rem;
+
 
   &.class-ranger {
     background-color: rgba(40, 100, 200, 0.15);
@@ -517,6 +546,56 @@ const dangerZoneWidth = computed(() => {
     font-size: 0.85rem;
     opacity: 0.7;
   }
+}
+
+.initiative-items-tooltip {
+  position: fixed;
+  background: var(--theme-col-parchment-light);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  width: 16rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 1.5rem;
+    border: 5px solid transparent;
+    border-top-color: var(--theme-col-parchment-light);
+  }
+}
+
+.initiative-tooltip-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+
+  & + .initiative-tooltip-item {
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+
+.initiative-tooltip-item-name {
+  font-weight: 700;
+  color: var(--theme-col-blurple);
+}
+
+.initiative-tooltip-item-effect {
+  color: var(--theme-col-brown);
+  line-height: 1.35;
+}
+
+.initiative-tooltip-empty {
+  color: var(--theme-col-brown-light);
+  opacity: 0.6;
 }
 
 .ap-filter-btn {
