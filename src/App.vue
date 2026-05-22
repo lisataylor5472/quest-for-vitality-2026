@@ -97,6 +97,10 @@ onUnmounted(() => {
             img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
+    button.refresh-btn(@click="handleQuietRefresh" :class="{ spinning: refreshing }" data-tooltip="Refresh data" data-tooltip-pos="below")
+      svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round")
+        polyline(points="23 4 23 10 17 10")
+        path(d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10")
     .nav-pills
       RouterLink(to="/leaderboard" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") leaderboard
@@ -104,10 +108,6 @@ onUnmounted(() => {
         button(@click="navigate" :class="{ active: isActive }") campaign
       RouterLink(to="/dungeon" custom v-slot="{ navigate, isActive }")
         button(@click="navigate" :class="{ active: isActive }") dungeon
-    button.refresh-btn(@click="handleQuietRefresh" :class="{ spinning: refreshing }" data-tooltip="Refresh data" data-tooltip-pos="below")
-      svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round")
-        polyline(points="23 4 23 10 17 10")
-        path(d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10")
     DiceRoller(v-if="route.path === '/dungeon'")
   .main-content-wrapper
     .parchment-page

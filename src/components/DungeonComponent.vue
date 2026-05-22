@@ -10,19 +10,14 @@ const chestOpenUrl = new URL('../assets/chest-open.svg', import.meta.url).href
 const store = useGameStore()
 
 const hoveredPlayerId = ref<string | null>(null)
-const initiativeHoverPlayer = ref<(typeof store.players)[number] | null>(null)
-const initiativeTooltipPos = ref({ x: 0, y: 0 })
 
-function onInitiativeEnter(e: MouseEvent, p: (typeof store.players)[number]) {
-  hoveredPlayerId.value = p.playerId
-  initiativeHoverPlayer.value = p
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  initiativeTooltipPos.value = { x: rect.left, y: rect.top }
-}
-
-function onInitiativeLeave() {
-  hoveredPlayerId.value = null
-  initiativeHoverPlayer.value = null
+function hpClass(hp: number, maxHp: number): string {
+  if (!maxHp) return ''
+  const ratio = hp / maxHp
+  if (ratio >= 1) return 'hp-full'
+  if (ratio >= 0.9) return 'hp-good'
+  if (ratio >= 0.8) return 'hp-warn'
+  return 'hp-crit'
 }
 const collapsedGroups = ref(new Set<string>())
 const expandedPlayers = ref(new Set<string>())
@@ -278,13 +273,34 @@ const dangerZoneWidth = computed(() => {
             span.material-icons campaign
         .player-roster
           .initiative-list(v-if="rosterTab === 'initiative'")
-            .initiative-row(v-for="(p, i) in initiativeList" :key="p.playerId" :class="`class-${p.class?.toLowerCase()}`" @mouseenter="onInitiativeEnter($event, p)" @mouseleave="onInitiativeLeave()")
-              span.initiative-num {{ i + 1 }}
-              img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
-              span.initiative-name {{ p.charName }}
-              span.initiative-ap
-                span.material-icons.ap-icon campaign
-                | {{ p.actionPoints }}
+            table.roster-table
+              tbody
+                template(v-for="p in initiativeList" :key="p.playerId")
+                  tr(:class="['class-' + p.class?.toLowerCase(), { 'is-expanded': expandedPlayers.has(p.playerId) }]" @mouseenter="hoveredPlayerId = p.playerId" @mouseleave="hoveredPlayerId = null" @click="toggleExpanded(p.playerId)" style="cursor:pointer")
+                    td.avatar-cell
+                      img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
+                    td.col-name(:title="p.realName")
+                      span.char-name(:data-tooltip="p.charName.length > 20 ? p.charName : undefined") {{ truncate(p.charName) }}
+                    td.col-hp(:class="hpClass(p.hp, p.maxHp)") {{ p.hp }}/{{ p.maxHp }}
+                    td.col-items
+                      span.material-icons.bag-icon backpack
+                      | {{ itemCount(p) }}
+                    td.col-ap
+                      span.material-icons.ap-icon campaign
+                      | {{ p.actionPoints }}
+                  tr.expanded-row(v-if="expandedPlayers.has(p.playerId)" :class="`class-${p.class?.toLowerCase()}`")
+                    td(colspan="5")
+                      .item-list
+                        span.item-slot-label ITEMS:
+                        .item-slots
+                          .item-slot-wrapper(v-if="p.itemSlot1")
+                            span.item-slot-value {{ itemByNo.get(p.itemSlot1) ?? p.itemSlot1 }}
+                            .item-slot-tooltip(v-if="itemEffectByNo.get(p.itemSlot1)") {{ itemEffectByNo.get(p.itemSlot1) }}
+                          span.item-slot-empty(v-else) [ ... ]
+                          .item-slot-wrapper(v-if="p.itemSlot2")
+                            span.item-slot-value {{ itemByNo.get(p.itemSlot2) ?? p.itemSlot2 }}
+                            .item-slot-tooltip(v-if="itemEffectByNo.get(p.itemSlot2)") {{ itemEffectByNo.get(p.itemSlot2) }}
+                          span.item-slot-empty(v-else) [ ... ]
           .roster-groups(v-else)
             .class-group(v-for="group in groupedPlayers" :key="group.class")
               .class-group-header(:class="`class-${group.class}`" @click="toggleGroup(group.class)")
@@ -299,7 +315,7 @@ const dangerZoneWidth = computed(() => {
                         img.avatar(:src="avatarSrc(p.img)" :alt="p.charName")
                       td.col-name(:title="p.realName")
                         span.char-name(:data-tooltip="p.charName.length > 20 ? p.charName : undefined") {{ truncate(p.charName) }}
-                      td.col-hp {{ p.hp }}/{{ p.maxHp }}
+                      td.col-hp(:class="hpClass(p.hp, p.maxHp)") {{ p.hp }}/{{ p.maxHp }}
                       td.col-items
                         span.material-icons.bag-icon backpack
                         | {{ itemCount(p) }}
@@ -368,19 +384,6 @@ const dangerZoneWidth = computed(() => {
                       span.universal-ap-note All Actions 1 AP (unless noted otherwise)
         span.universal-ap-note All Actions 1 AP (unless noted otherwise)
 
-Teleport(to="body")
-  .initiative-items-tooltip(
-    v-if="initiativeHoverPlayer"
-    :style="{ left: initiativeTooltipPos.x + 'px', top: initiativeTooltipPos.y + 'px', transform: 'translateY(calc(-100% - 8px))' }"
-  )
-    template(v-if="initiativeHoverPlayer.itemSlot1 || initiativeHoverPlayer.itemSlot2")
-      .initiative-tooltip-item(v-if="initiativeHoverPlayer.itemSlot1")
-        span.initiative-tooltip-item-name {{ itemByNo.get(initiativeHoverPlayer.itemSlot1) ?? initiativeHoverPlayer.itemSlot1 }}
-        span.initiative-tooltip-item-effect(v-if="itemEffectByNo.get(initiativeHoverPlayer.itemSlot1)") {{ itemEffectByNo.get(initiativeHoverPlayer.itemSlot1) }}
-      .initiative-tooltip-item(v-if="initiativeHoverPlayer.itemSlot2")
-        span.initiative-tooltip-item-name {{ itemByNo.get(initiativeHoverPlayer.itemSlot2) ?? initiativeHoverPlayer.itemSlot2 }}
-        span.initiative-tooltip-item-effect(v-if="itemEffectByNo.get(initiativeHoverPlayer.itemSlot2)") {{ itemEffectByNo.get(initiativeHoverPlayer.itemSlot2) }}
-    span.initiative-tooltip-empty(v-else) No items
 </template>
 
 <style lang="scss" scoped>
@@ -482,118 +485,6 @@ Teleport(to="body")
   padding: 0.25rem 0;
 }
 
-.initiative-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.5rem;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.82rem;
-
-  &.class-ranger {
-    background-color: rgba(40, 100, 200, 0.15);
-  }
-  &.class-cleric {
-    background-color: rgba(220, 190, 80, 0.2);
-  }
-  &.class-druid {
-    background-color: rgba(100, 160, 60, 0.15);
-  }
-  &.class-sorcerer {
-    background-color: rgba(120, 60, 200, 0.15);
-  }
-  &.class-rogue {
-    background-color: rgba(60, 60, 80, 0.15);
-  }
-  &.class-barbarian {
-    background-color: rgba(220, 120, 20, 0.15);
-  }
-}
-
-.initiative-num {
-  flex: 0 0 1.2rem;
-  font-weight: 700;
-  font-size: 0.75rem;
-  color: var(--theme-col-brown-light);
-  text-align: right;
-}
-
-.initiative-name {
-  flex: 1;
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: var(--theme-col-blurple);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.initiative-ap {
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--theme-col-brown);
-  flex-shrink: 0;
-
-  .ap-icon {
-    font-size: 0.85rem;
-    opacity: 0.7;
-  }
-}
-
-.initiative-items-tooltip {
-  position: fixed;
-  background: var(--theme-col-parchment-light);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
-  width: 16rem;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.72rem;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  pointer-events: none;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 1.5rem;
-    border: 5px solid transparent;
-    border-top-color: var(--theme-col-parchment-light);
-  }
-}
-
-.initiative-tooltip-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-
-  & + .initiative-tooltip-item {
-    margin-top: 0.35rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-  }
-}
-
-.initiative-tooltip-item-name {
-  font-weight: 700;
-  color: var(--theme-col-blurple);
-}
-
-.initiative-tooltip-item-effect {
-  color: var(--theme-col-brown);
-  line-height: 1.35;
-}
-
-.initiative-tooltip-empty {
-  color: var(--theme-col-brown-light);
-  opacity: 0.6;
-}
 
 .ap-filter-btn {
   display: flex;
@@ -879,10 +770,16 @@ td.col-name {
 .col-hp {
   width: 3.5rem;
   font-size: 0.7rem;
+  font-weight: 600;
+
+  &.hp-full  { color: var(--theme-col-med-green); }
+  &.hp-good  { color: var(--theme-col-dark-yellow); }
+  &.hp-warn  { color: var(--theme-col-red); }
+  &.hp-crit  { color: var(--theme-col-dark-red); }
 }
 
 .dungeon-floor {
-  --floor-height: 32vh;
+  --floor-height: 34vh;
   flex: none;
   min-width: 0;
   border-radius: 20px;

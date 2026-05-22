@@ -246,7 +246,7 @@ Teleport(to="body")
   top: 50%;
   transform: translateY(-50%);
   height: 2.2rem;
-  margin-right: 10rem;
+  margin-right: 2rem;
   display: flex;
   align-items: center;
   gap: 0.6rem;
