@@ -381,7 +381,6 @@ const dangerZoneWidth = computed(() => {
                     span.ability-name(:class="{ 'ability-name--rollable': c.ability3Dice }" @click="rollAbility(c.ability3Dice)") {{ c.ability3Name }}
                     span.ability-cost(v-if="c.ability3Cost && c.ability3Cost > 1") {{ c.ability3Cost }} AP
                   p.ability-desc {{ c.ability3Desc }}
-                      span.universal-ap-note All Actions 1 AP (unless noted otherwise)
         span.universal-ap-note All Actions 1 AP (unless noted otherwise)
 
 </template>
@@ -484,7 +483,6 @@ const dangerZoneWidth = computed(() => {
 .initiative-list {
   padding: 0.25rem 0;
 }
-
 
 .ap-filter-btn {
   display: flex;
@@ -772,10 +770,18 @@ td.col-name {
   font-size: 0.7rem;
   font-weight: 600;
 
-  &.hp-full  { color: var(--theme-col-med-green); }
-  &.hp-good  { color: var(--theme-col-dark-yellow); }
-  &.hp-warn  { color: var(--theme-col-red); }
-  &.hp-crit  { color: var(--theme-col-dark-red); }
+  &.hp-full {
+    color: var(--theme-col-med-green);
+  }
+  &.hp-good {
+    color: var(--theme-col-dark-yellow);
+  }
+  &.hp-warn {
+    color: var(--theme-col-red);
+  }
+  &.hp-crit {
+    color: var(--theme-col-dark-red);
+  }
 }
 
 .dungeon-floor {

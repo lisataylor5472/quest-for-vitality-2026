@@ -74,7 +74,8 @@ function changeHuntersMark(delta: number) {
   huntersMark.value = Math.max(0, huntersMark.value + delta)
 }
 
-function roll(sides: number) {
+function roll(sides: number, tiered = false) {
+  isTiered.value = tiered
   selectedDie.value = sides
   pickerOpen.value = false
   modalOpen.value = true
@@ -157,11 +158,10 @@ watch(
     if (!dice) return
     qty.value = dice.qty
     floorVal.value = dice.floor
-    isTiered.value = !!dice.tiered
     applySneakAttack.value = !!dice.sneakAttack
     tierDamage.value = null
     store.clearPendingRoll()
-    roll(dice.sides)
+    roll(dice.sides, !!dice.tiered)
   },
 )
 
