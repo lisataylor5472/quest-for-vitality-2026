@@ -105,7 +105,7 @@ function sortIcon(key: SortKey) {
 // ---------------------------------------------------------------------------
 // Campaign selection toggle
 // ---------------------------------------------------------------------------
-const selectedCampaignId = ref<'c1' | 'c2' | 'c3'>('c3')
+const selectedCampaignId = ref<'c1' | 'c2' | 'c3' | 'c4'>('c3')
 
 // ---------------------------------------------------------------------------
 // Activity tracker — selected campaign date range + per-player activity sets
@@ -134,7 +134,7 @@ const campaignDays = computed<string[]>(() => {
 
 function formatDate(iso: string | undefined): string {
   if (!iso) return '—'
-  const d = new Date(iso)
+  const d = new Date(iso + 'T12:00:00')
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -149,7 +149,7 @@ function formatDayTooltip(isoDate: string): string {
 /** Activity dates as Sets per player for O(1) has() lookups.
  *  Normalizes to YYYY-MM-DD in case activeDay is a full ISO datetime string. */
 const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
-  const source = selectedCampaignId.value === 'c3' ? store.plyrActivity3 : selectedCampaignId.value === 'c2' ? store.plyrActivity2 : store.plyrActivity
+  const source = selectedCampaignId.value === 'c4' ? store.plyrActivity4 : selectedCampaignId.value === 'c3' ? store.plyrActivity3 : selectedCampaignId.value === 'c2' ? store.plyrActivity2 : store.plyrActivity
   const map = new Map<string, Set<string>>()
   for (const entry of source) {
     if (!entry.playerId || !entry.activeDay) continue
@@ -164,7 +164,7 @@ const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
 // Joined rows: players + cmpgn1 progress, sorted
 // ---------------------------------------------------------------------------
 const displayedRows = computed(() => {
-  const byPlayer = selectedCampaignId.value === 'c3' ? store.cmpgn3ByPlayer : selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
+  const byPlayer = selectedCampaignId.value === 'c4' ? store.cmpgn4ByPlayer : selectedCampaignId.value === 'c3' ? store.cmpgn3ByPlayer : selectedCampaignId.value === 'c2' ? store.cmpgn2ByPlayer : store.cmpgn1ByPlayer
   const rows = store.players
     .filter((player) => byPlayer.has(player.playerId))
     .map((player) => ({
@@ -202,8 +202,10 @@ const displayedRows = computed(() => {
           :class="{ active: selectedCampaignId === 'c3' }"
           @click="selectedCampaignId = 'c3'"
         ) cardio
-        button.active.c4
-          span.material-icons hourglass_empty
+        button.c4(
+          :class="{ active: selectedCampaignId === 'c4' }"
+          @click="selectedCampaignId = 'c4'"
+        ) sleep
         button.active.c5
           span.material-icons hourglass_empty
         button.active.c6

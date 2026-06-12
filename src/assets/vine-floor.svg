@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
+  <!-- Shadow layer (darkest, widest) -->
+  <path d="M0,105 C35,82 65,128 108,102 C148,78 178,132 218,105 C250,82 278,110 300,104"
+        stroke="#150905" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M108,102 C96,72 84,46 72,12"
+        stroke="#150905" stroke-width="11" fill="none" stroke-linecap="round"/>
+  <path d="M218,105 C232,72 248,44 268,12"
+        stroke="#150905" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M160,106 C166,138 162,164 175,198"
+        stroke="#150905" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+  <!-- Mid root color -->
+  <path d="M0,105 C35,82 65,128 108,102 C148,78 178,132 218,105 C250,82 278,110 300,104"
+        stroke="#4d2a0f" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M108,102 C96,72 84,46 72,12"
+        stroke="#4d2a0f" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M218,105 C232,72 248,44 268,12"
+        stroke="#4d2a0f" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M160,106 C166,138 162,164 175,198"
+        stroke="#4d2a0f" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!-- Top highlight (lightest) -->
+  <path d="M0,105 C35,82 65,128 108,102 C148,78 178,132 218,105 C250,82 278,110 300,104"
+        stroke="#8a5830" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M108,102 C96,72 84,46 72,12"
+        stroke="#8a5830" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M218,105 C232,72 248,44 268,12"
+        stroke="#8a5830" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M160,106 C166,138 162,164 175,198"
+        stroke="#8a5830" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Secondary smaller roots -->
+  <path d="M0,148 C22,138 48,152 72,144" stroke="#3a1e08" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M0,148 C22,138 48,152 72,144" stroke="#6e4220" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M236,152 C258,140 278,148 300,142" stroke="#3a1e08" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M236,152 C258,140 278,148 300,142" stroke="#6e4220" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M25,62 C40,54 58,62 76,56" stroke="#2e1608" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M25,62 C40,54 58,62 76,56" stroke="#6e4220" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Root junction knobs -->
+  <ellipse cx="108" cy="102" rx="8" ry="6" fill="#2a1206"/>
+  <ellipse cx="108" cy="102" rx="5" ry="3.5" fill="#5a3418"/>
+  <ellipse cx="218" cy="105" rx="7" ry="5" fill="#2a1206"/>
+  <ellipse cx="218" cy="105" rx="4.5" ry="3" fill="#5a3418"/>
+  <ellipse cx="160" cy="106" rx="6" ry="4" fill="#2a1206"/>
+  <ellipse cx="160" cy="106" rx="3.5" ry="2.5" fill="#5a3418"/>
+
+  <!-- Moss patches -->
+  <ellipse cx="48" cy="168" rx="14" ry="8" fill="#2a5e16" opacity="0.5" transform="rotate(-18 48 168)"/>
+  <ellipse cx="255" cy="68" rx="12" ry="7" fill="#2a5e16" opacity="0.45" transform="rotate(12 255 68)"/>
+  <ellipse cx="148" cy="36" rx="10" ry="6" fill="#3a6e1e" opacity="0.4" transform="rotate(-8 148 36)"/>
+  <ellipse cx="195" cy="170" rx="9" ry="5" fill="#2a5e16" opacity="0.38" transform="rotate(20 195 170)"/>
+
+  <!-- Thin hair roots -->
+  <path d="M72,144 C78,158 75,172 82,184" stroke="#2a1206" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.75"/>
+  <path d="M76,56 C82,44 80,30 88,18" stroke="#2a1206" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M72,12 C65,6 60,0 55,0" stroke="#3a1e08" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M268,12 C275,5 282,0 290,0" stroke="#3a1e08" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

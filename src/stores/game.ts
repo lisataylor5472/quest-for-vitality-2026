@@ -53,9 +53,11 @@ export const useGameStore = defineStore('game', () => {
   const cmpgn1 = ref<CampaignProgress[]>([])
   const cmpgn2 = ref<CampaignProgress[]>([])
   const cmpgn3 = ref<CampaignProgress[]>([])
+  const cmpgn4 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
   const plyrActivity2 = ref<PlayerActivity[]>([])
   const plyrActivity3 = ref<PlayerActivity[]>([])
+  const plyrActivity4 = ref<PlayerActivity[]>([])
   const achievements = ref<Achievement[]>([])
   const dungeonElements = ref<DungeonElement[]>([])
   const items = ref<GameItem[]>([])
@@ -136,6 +138,55 @@ export const useGameStore = defineStore('game', () => {
     return map
   })
 
+  const cmpgn4ByPlayer = computed<Map<string, CampaignProgress>>(() => {
+    const map = new Map<string, CampaignProgress>()
+    for (const row of cmpgn4.value) {
+      if (row.playerId) map.set(row.playerId, row)
+    }
+    return map
+  })
+
+  /**
+   * Campaign 4 dungeon progress computed from activity gaps.
+   * Each calendar day from campaign start to today (or end) where the player
+   * has no plyrActivity4 entry counts as one step toward the enemy.
+   * Returns a 0–100 percentage of (missed days / total campaign days).
+   */
+  const cmpgn4DgnProgressByPlayer = computed<Map<string, number>>(() => {
+    const campaign = campaigns.value.find((c) => c.id === 'c4')
+    if (!campaign) return new Map()
+
+    const rawDate = gameState.value?.currentDate
+    const today = rawDate ? new Date(rawDate) : new Date()
+    const start = new Date(campaign.start)
+    const end = new Date(campaign.end)
+    const effectiveEnd = today <= end ? today : end
+
+    const totalDays = Number(campaign.days)
+    if (!totalDays) return new Map()
+
+    const activeDaysByPlayer = new Map<string, Set<string>>()
+    for (const entry of plyrActivity4.value) {
+      if (!entry.playerId || !entry.activeDay) continue
+      if (!activeDaysByPlayer.has(entry.playerId)) activeDaysByPlayer.set(entry.playerId, new Set())
+      activeDaysByPlayer.get(entry.playerId)!.add(entry.activeDay)
+    }
+
+    const map = new Map<string, number>()
+    for (const row of cmpgn4.value) {
+      if (!row.playerId) continue
+      const activeDays = activeDaysByPlayer.get(row.playerId) ?? new Set<string>()
+      let missed = 0
+      const cursor = new Date(start)
+      while (cursor <= effectiveEnd) {
+        if (!activeDays.has(cursor.toISOString().slice(0, 10))) missed++
+        cursor.setUTCDate(cursor.getUTCDate() + 1)
+      }
+      map.set(row.playerId, Math.min(100, (missed / totalDays) * 100))
+    }
+    return map
+  })
+
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
@@ -154,9 +205,11 @@ export const useGameStore = defineStore('game', () => {
       cmpgn1.value = data.cmpgn1
       cmpgn2.value = data.cmpgn2 ?? []
       cmpgn3.value = data.cmpgn3 ?? []
+      cmpgn4.value = data.cmpgn4 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
+      plyrActivity4.value = data.plyrActivity4 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -181,9 +234,11 @@ export const useGameStore = defineStore('game', () => {
       cmpgn1.value = data.cmpgn1
       cmpgn2.value = data.cmpgn2 ?? []
       cmpgn3.value = data.cmpgn3 ?? []
+      cmpgn4.value = data.cmpgn4 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
+      plyrActivity4.value = data.plyrActivity4 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -205,9 +260,11 @@ export const useGameStore = defineStore('game', () => {
     cmpgn1,
     cmpgn2,
     cmpgn3,
+    cmpgn4,
     plyrActivity,
     plyrActivity2,
     plyrActivity3,
+    plyrActivity4,
     achievements,
     dungeonElements,
     items,
@@ -222,6 +279,8 @@ export const useGameStore = defineStore('game', () => {
     cmpgn1ByPlayer,
     cmpgn2ByPlayer,
     cmpgn3ByPlayer,
+    cmpgn4ByPlayer,
+    cmpgn4DgnProgressByPlayer,
     pendingRoll,
     sneakAttack,
     // actions

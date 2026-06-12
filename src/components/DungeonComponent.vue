@@ -89,8 +89,10 @@ function avatarSrc(img: string) {
 const CLASS_ORDER = ['ranger', 'cleric', 'druid', 'sorcerer', 'rogue', 'barbarian']
 
 const players = computed(() => {
-  const byPlayer =
-    selectedCampaignId.value === 'c3'
+  const c4 = selectedCampaignId.value === 'c4'
+  const byPlayer = c4
+    ? store.cmpgn4ByPlayer
+    : selectedCampaignId.value === 'c3'
       ? store.cmpgn3ByPlayer
       : selectedCampaignId.value === 'c2'
         ? store.cmpgn2ByPlayer
@@ -99,7 +101,9 @@ const players = computed(() => {
     .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({
       ...p,
-      dgnProgress: byPlayer.get(p.playerId)!.dgnProgress,
+      dgnProgress: c4
+        ? (store.cmpgn4DgnProgressByPlayer.get(p.playerId) ?? 0)
+        : byPlayer.get(p.playerId)!.dgnProgress,
     }))
     .sort((a, b) => {
       const ai = CLASS_ORDER.indexOf(a.class?.toLowerCase())
@@ -219,15 +223,19 @@ const enemyRevealed = computed(() => {
 })
 
 const enemyLeftPercent = computed(() => {
+  if (selectedCampaignId.value === 'c4') return 93
   const prog = Number(activeCampaign.value?.enemyProg ?? 0)
   return prog === 0 ? 2.5 : 5 + prog * 0.95
 })
 
 const enemyLeft = computed(() => `${enemyLeftPercent.value}%`)
 
-const dangerZoneWidth = computed(() => {
+const dangerZoneStyle = computed(() => {
   const dmgZone = Number(activeCampaign.value?.enemyDmgZone ?? 16.75)
-  return `${enemyLeftPercent.value + dmgZone}%`
+  if (selectedCampaignId.value === 'c4') {
+    return { left: `${enemyLeftPercent.value - dmgZone}%`, right: '0', width: 'auto', background: 'rgba(10, 55, 10, 0.52)' }
+  }
+  return { width: `${enemyLeftPercent.value + dmgZone}%` }
 })
 </script>
 
@@ -336,14 +344,15 @@ const dangerZoneWidth = computed(() => {
                               .item-slot-tooltip(v-if="itemEffectByNo.get(p.itemSlot2)") {{ itemEffectByNo.get(p.itemSlot2) }}
                             span.item-slot-empty(v-else) [ ... ]
       .main-content
-        .dungeon-floor(:class="{ ocean: selectedCampaignId === 'c3' }")
-          .danger-zone(:style="{ width: dangerZoneWidth }")
+        .dungeon-floor(:class="{ ocean: selectedCampaignId === 'c3', forest: selectedCampaignId === 'c4' }")
+          .danger-zone(:style="dangerZoneStyle")
           .enemy-buffer
-          img.enemy-img(v-if="activeCampaign && enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy" :style="{ left: enemyLeft }")
+          img.enemy-img(v-if="activeCampaign && enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy" :style="{ left: enemyLeft, top: selectedCampaignId === 'c4' ? '50%' : '75%' }")
           .player-progress-zone
             .hover-radius(v-if="hoveredDgnProgress !== null" :style="{ left: hoveredDgnProgress + '%' }")
-            .chest-token(v-for="chest in activeChests" :key="chest.id" :style="{ left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
-              img.chest-img(:src="chestSrc(chest.looted)" :alt="chest.item")
+            .chest-token(v-for="chest in activeChests" :key="chest.id" :style="chest.item === 'exit' ? { left: chest.location + '%', bottom: '0' } : { left: chest.location + '%', bottom: chest.bottomOffset + 'rem' }" :class="{ 'is-looted': chest.looted, 'is-legendary': chest.item === 'legendaryChest', 'is-exit': chest.item === 'exit' }" @mouseenter="hoveredChestId = chest.id" @mouseleave="hoveredChestId = null")
+              .exit-circle(v-if="chest.item === 'exit'")
+              img.chest-img(v-else :src="chestSrc(chest.looted)" :alt="chest.item")
               .chest-tooltip(v-if="hoveredChestId === chest.id && chest.itemsRevealed" :class="chest.location < 50 ? 'tooltip-right' : 'tooltip-left'")
                 span.chest-tooltip-item(v-for="name in chestItemNames(chest)" :key="name") {{ name }}
             .player-token(v-for="p in playersPositioned" :key="p.playerId" :style="{ left: p.dgnProgress + '%', top: `calc(50% + ${p.topOffset}rem)` }" :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }")
@@ -815,6 +824,14 @@ td.col-name {
     background-size: 15% auto;
     opacity: 0.85;
   }
+
+  &.forest::before {
+    background-image: url('../assets/stone-floor.svg');
+    background-color: #2a5c1a;
+    background-blend-mode: multiply;
+    background-size: 20% auto;
+    opacity: 0.75;
+  }
 }
 
 .danger-zone {
@@ -858,6 +875,13 @@ td.col-name {
   &.is-looted {
     opacity: 0.5;
   }
+}
+
+.exit-circle {
+  width: clamp(2rem, 6vh, 4rem);
+  height: clamp(0.6rem, 1.8vh, 1.2rem);
+  border-radius: 50%;
+  background: #000;
 }
 
 .chest-img {
