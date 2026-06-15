@@ -105,7 +105,9 @@ function sortIcon(key: SortKey) {
 // ---------------------------------------------------------------------------
 // Campaign selection toggle
 // ---------------------------------------------------------------------------
-const selectedCampaignId = ref<'c1' | 'c2' | 'c3' | 'c4'>('c3')
+const selectedCampaignId = ref<'c1' | 'c2' | 'c3' | 'c4'>(
+  (store.gameState?.currentCmpgn as 'c1' | 'c2' | 'c3' | 'c4') ?? 'c4',
+)
 
 // ---------------------------------------------------------------------------
 // Activity tracker — selected campaign date range + per-player activity sets

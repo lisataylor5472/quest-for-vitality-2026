@@ -37,7 +37,7 @@ function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
   return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
 }
 
-const selectedCampaignId = ref<string>('c3')
+const selectedCampaignId = ref<string>(store.gameState?.currentCmpgn ?? 'c4')
 
 const activeCampaign = computed(
   () => store.campaigns.find((c) => c.id === selectedCampaignId.value) ?? null,

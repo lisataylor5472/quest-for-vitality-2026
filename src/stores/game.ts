@@ -169,7 +169,7 @@ export const useGameStore = defineStore('game', () => {
     for (const entry of plyrActivity4.value) {
       if (!entry.playerId || !entry.activeDay) continue
       if (!activeDaysByPlayer.has(entry.playerId)) activeDaysByPlayer.set(entry.playerId, new Set())
-      activeDaysByPlayer.get(entry.playerId)!.add(entry.activeDay)
+      activeDaysByPlayer.get(entry.playerId)!.add(entry.activeDay.slice(0, 10))
     }
 
     const map = new Map<string, number>()
@@ -182,7 +182,7 @@ export const useGameStore = defineStore('game', () => {
         if (!activeDays.has(cursor.toISOString().slice(0, 10))) missed++
         cursor.setUTCDate(cursor.getUTCDate() + 1)
       }
-      map.set(row.playerId, Math.min(100, (missed / totalDays) * 100))
+      map.set(row.playerId, Math.min(100, (missed / 2 / totalDays) * 100))
     }
     return map
   })
