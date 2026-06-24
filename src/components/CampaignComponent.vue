@@ -170,6 +170,34 @@ const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
 })
 
 // ---------------------------------------------------------------------------
+// C4-specific: "Rested" = unique active days / elapsed campaign days so far
+// ---------------------------------------------------------------------------
+const restedByPlayer = computed<Map<string, number>>(() => {
+  if (selectedCampaignId.value !== 'c4') return new Map()
+  const c = activeCampaign.value
+  if (!c?.start || !c?.end) return new Map()
+
+  const todayStr = store.gameState?.currentDate?.slice(0, 10)
+  if (!todayStr) return new Map()
+
+  const campaignStart = c.start.slice(0, 10)
+  const campaignEnd = c.end.slice(0, 10)
+  const effectiveEnd = todayStr < campaignEnd ? todayStr : campaignEnd
+
+  const startDate = new Date(campaignStart + 'T00:00:00Z')
+  const endDate = new Date(effectiveEnd + 'T00:00:00Z')
+  const elapsedCount = Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000) + 1
+  if (elapsedCount <= 0) return new Map()
+
+  const map = new Map<string, number>()
+  for (const playerId of store.cmpgn4ByPlayer.keys()) {
+    const actSet = activitySetByPlayer.value.get(playerId) ?? new Set<string>()
+    map.set(playerId, Math.round((actSet.size / elapsedCount) * 100))
+  }
+  return map
+})
+
+// ---------------------------------------------------------------------------
 // Joined rows: players + cmpgn1 progress, sorted
 // ---------------------------------------------------------------------------
 const displayedRows = computed(() => {
@@ -183,10 +211,14 @@ const displayedRows = computed(() => {
           : store.cmpgn1ByPlayer
   const rows = store.players
     .filter((player) => byPlayer.has(player.playerId))
-    .map((player) => ({
-      ...player,
-      ...byPlayer.get(player.playerId)!,
-    }))
+    .map((player) => {
+      const base = { ...player, ...byPlayer.get(player.playerId)! }
+      if (selectedCampaignId.value === 'c4') {
+        const rested = restedByPlayer.value.get(player.playerId)
+        if (rested !== undefined) base.dgnProgress = rested
+      }
+      return base
+    })
 
   if (!sortKey.value) {
     const alpha = (s: string) => s.replace(/^[^\p{L}]+/u, '')
@@ -287,10 +319,10 @@ const displayedRows = computed(() => {
               th.sortable(
                 :class="{ active: sortKey === 'dgnProgress' }"
                 @click="setSort('dgnProgress')"
-                data-tooltip="Overall dungeon progress percentage"
+                :data-tooltip="selectedCampaignId === 'c4' ? 'Active days / elapsed campaign days' : 'Overall dungeon progress percentage'"
                 data-tooltip-pos="below"
               )
-                | Dungeon
+                | {{ selectedCampaignId === 'c4' ? 'Rested' : 'Dungeon' }}
                 span.material-icons.sort-icon {{ sortIcon('dgnProgress') }}
               th.sortable(
                 :class="{ active: sortKey === 'success' }"
