@@ -92,11 +92,13 @@ const players = computed(() => {
   const c4 = selectedCampaignId.value === 'c4'
   const byPlayer = c4
     ? store.cmpgn4ByPlayer
-    : selectedCampaignId.value === 'c3'
-      ? store.cmpgn3ByPlayer
-      : selectedCampaignId.value === 'c2'
-        ? store.cmpgn2ByPlayer
-        : store.cmpgn1ByPlayer
+    : selectedCampaignId.value === 'c5'
+      ? store.cmpgn5ByPlayer
+      : selectedCampaignId.value === 'c3'
+        ? store.cmpgn3ByPlayer
+        : selectedCampaignId.value === 'c2'
+          ? store.cmpgn2ByPlayer
+          : store.cmpgn1ByPlayer
   return store.players
     .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({

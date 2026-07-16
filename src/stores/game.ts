@@ -54,10 +54,12 @@ export const useGameStore = defineStore('game', () => {
   const cmpgn2 = ref<CampaignProgress[]>([])
   const cmpgn3 = ref<CampaignProgress[]>([])
   const cmpgn4 = ref<CampaignProgress[]>([])
+  const cmpgn5 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
   const plyrActivity2 = ref<PlayerActivity[]>([])
   const plyrActivity3 = ref<PlayerActivity[]>([])
   const plyrActivity4 = ref<PlayerActivity[]>([])
+  const plyrActivity5 = ref<PlayerActivity[]>([])
   const achievements = ref<Achievement[]>([])
   const dungeonElements = ref<DungeonElement[]>([])
   const items = ref<GameItem[]>([])
@@ -146,6 +148,14 @@ export const useGameStore = defineStore('game', () => {
     return map
   })
 
+  const cmpgn5ByPlayer = computed<Map<string, CampaignProgress>>(() => {
+    const map = new Map<string, CampaignProgress>()
+    for (const row of cmpgn5.value) {
+      if (row.playerId) map.set(row.playerId, row)
+    }
+    return map
+  })
+
   /**
    * Campaign 4 dungeon progress computed from activity gaps.
    * Each calendar day from campaign start to today (or end) where the player
@@ -206,10 +216,12 @@ export const useGameStore = defineStore('game', () => {
       cmpgn2.value = data.cmpgn2 ?? []
       cmpgn3.value = data.cmpgn3 ?? []
       cmpgn4.value = data.cmpgn4 ?? []
+      cmpgn5.value = data.cmpgn5 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
       plyrActivity4.value = data.plyrActivity4 ?? []
+      plyrActivity5.value = data.plyrActivity5 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -235,10 +247,12 @@ export const useGameStore = defineStore('game', () => {
       cmpgn2.value = data.cmpgn2 ?? []
       cmpgn3.value = data.cmpgn3 ?? []
       cmpgn4.value = data.cmpgn4 ?? []
+      cmpgn5.value = data.cmpgn5 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
       plyrActivity4.value = data.plyrActivity4 ?? []
+      plyrActivity5.value = data.plyrActivity5 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -261,10 +275,12 @@ export const useGameStore = defineStore('game', () => {
     cmpgn2,
     cmpgn3,
     cmpgn4,
+    cmpgn5,
     plyrActivity,
     plyrActivity2,
     plyrActivity3,
     plyrActivity4,
+    plyrActivity5,
     achievements,
     dungeonElements,
     items,
@@ -280,6 +296,7 @@ export const useGameStore = defineStore('game', () => {
     cmpgn2ByPlayer,
     cmpgn3ByPlayer,
     cmpgn4ByPlayer,
+    cmpgn5ByPlayer,
     cmpgn4DgnProgressByPlayer,
     pendingRoll,
     sneakAttack,
