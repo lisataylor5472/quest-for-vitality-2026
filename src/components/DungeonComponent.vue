@@ -197,9 +197,27 @@ function chestSrc(looted: boolean) {
   return looted ? chestOpenUrl : chestClosedUrl
 }
 
+// Vertical stacking for the finished column, in vh so it tracks the floor height.
+// Mirrors --floor-height and the .player-avatar height clamp.
+const FLOOR_VH = 34
+const AVATAR_VH = 8
+const FINISHED_MAX_STEP_VH = 3.6
+
+/** Players at (or past) the end of the track. Absolute `left: 100%` would place
+ *  them outside the progress zone, where the floor's overflow clips them, so they
+ *  stack against the inside of the right edge instead. Avatars stay full size and
+ *  overlap vertically, tightening the step only as far as the floor requires. */
+const finishedPlayers = computed(() => {
+  const list = players.value.filter((p) => p.dgnProgress >= 100)
+  const span = FLOOR_VH - AVATAR_VH - 2
+  const step = list.length > 1 ? Math.min(FINISHED_MAX_STEP_VH, span / (list.length - 1)) : 0
+  return list.map((p, i) => ({ ...p, topOffset: (i - (list.length - 1) / 2) * step }))
+})
+
 const playersPositioned = computed(() => {
   const groups = new Map<number, number>() // dgnProgress -> count so far
   return players.value
+    .filter((p) => p.dgnProgress < 100)
     .map((p) => {
       const seen = groups.get(p.dgnProgress) ?? 0
       groups.set(p.dgnProgress, seen + 1)
@@ -358,6 +376,8 @@ const dangerZoneStyle = computed(() => {
               .chest-tooltip(v-if="hoveredChestId === chest.id && chest.itemsRevealed" :class="chest.location < 50 ? 'tooltip-right' : 'tooltip-left'")
                 span.chest-tooltip-item(v-for="name in chestItemNames(chest)" :key="name") {{ name }}
             .player-token(v-for="p in playersPositioned" :key="p.playerId" :style="{ left: p.dgnProgress + '%', top: `calc(50% + ${p.topOffset}rem)` }" :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }")
+              img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
+            .finished-token(v-for="p in finishedPlayers" :key="p.playerId" :style="{ top: `calc(50% + ${p.topOffset}vh)` }" :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }" :title="p.charName")
               img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
         .class-area
           .universal-bar
@@ -969,6 +989,29 @@ td.col-name {
   height: clamp(1.25rem, 8vh, 5rem);
   max-height: 85%;
   object-fit: contain;
+}
+
+// Players at 100%+ — stacked against the inside of the right edge at full avatar
+// size, overlapping vertically (topOffset is computed in vh to fit the floor).
+.finished-token {
+  position: absolute;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  z-index: 6;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    filter 0.2s ease;
+
+  &.is-highlighted {
+    transform: translateY(-50%) scale(1.25);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+    z-index: 10;
+  }
+
+  &.is-dimmed {
+    opacity: 0.35;
+  }
 }
 
 .enemy-buffer {
