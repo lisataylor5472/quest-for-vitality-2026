@@ -37,7 +37,13 @@ function itemCount(p: { itemSlot1: string; itemSlot2: string }): number {
   return (p.itemSlot1 ? 1 : 0) + (p.itemSlot2 ? 1 : 0)
 }
 
-const selectedCampaignId = ref<string>(store.gameState?.currentCmpgn ?? 'c4')
+/** `currentCmpgn` is "#N/A" between campaigns, so it needs validating against
+ *  the real campaign rows rather than a bare nullish fallback. */
+const selectedCampaignId = ref<string>(
+  store.campaigns.some((c) => c.id === store.gameState?.currentCmpgn)
+    ? store.gameState!.currentCmpgn
+    : 'c6',
+)
 
 const activeCampaign = computed(
   () => store.campaigns.find((c) => c.id === selectedCampaignId.value) ?? null,
@@ -92,13 +98,15 @@ const players = computed(() => {
   const c4 = selectedCampaignId.value === 'c4'
   const byPlayer = c4
     ? store.cmpgn4ByPlayer
-    : selectedCampaignId.value === 'c5'
-      ? store.cmpgn5ByPlayer
-      : selectedCampaignId.value === 'c3'
-        ? store.cmpgn3ByPlayer
-        : selectedCampaignId.value === 'c2'
-          ? store.cmpgn2ByPlayer
-          : store.cmpgn1ByPlayer
+    : selectedCampaignId.value === 'c6'
+      ? store.cmpgn6ByPlayer
+      : selectedCampaignId.value === 'c5'
+        ? store.cmpgn5ByPlayer
+        : selectedCampaignId.value === 'c3'
+          ? store.cmpgn3ByPlayer
+          : selectedCampaignId.value === 'c2'
+            ? store.cmpgn2ByPlayer
+            : store.cmpgn1ByPlayer
   return store.players
     .filter((p) => byPlayer.has(p.playerId))
     .map((p) => ({
@@ -250,6 +258,70 @@ const enemyLeftPercent = computed(() => {
 
 const enemyLeft = computed(() => `${enemyLeftPercent.value}%`)
 
+// ---------------------------------------------------------------------------
+// Campaign 6 — five fixed sections, one per previous boss.
+//
+// Unlike c1–c5 there is no horizontal track: `dgnProgress` does not move a
+// player. Section membership comes from `cmpgn6.dgnType` and is fixed for the
+// whole campaign, so avatars only ever scatter within their own band.
+// ---------------------------------------------------------------------------
+const isC6 = computed(() => selectedCampaignId.value === 'c6')
+
+const hoveredSection = ref<string | null>(null)
+
+/** FNV-1a over the playerId, normalised to [0,1). Seeds the scatter so avatars
+ *  hold their positions across refreshes instead of jumping on every poll. */
+function seed(key: string): number {
+  let h = 2166136261
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0) / 4294967296
+}
+
+// Avatars occupy the upper band of a section; the boss sits below them.
+const SCATTER_TOP_PCT = 12
+const SCATTER_BAND_PCT = 38
+const SCATTER_JITTER = 0.55
+
+/**
+ * Sections left-to-right, each with its assigned players pre-positioned.
+ * Players are laid on a coarse lattice sized to the section's headcount, then
+ * nudged by their seeded offsets — even coverage, organic result.
+ */
+const c6SectionsWithPlayers = computed(() => {
+  const sectionOfPlayer = store.cmpgn6SectionByPlayer
+  return store.c6Sections.map((section, sectionIdx) => {
+    const members = players.value.filter((p) => sectionOfPlayer.get(p.playerId) === section.id)
+    const cols = Math.max(1, Math.ceil(Math.sqrt(members.length)))
+    const rows = Math.max(1, Math.ceil(members.length / cols))
+    const cellW = 100 / cols
+    const cellH = SCATTER_BAND_PCT / rows
+
+    const scattered = members.map((p, i) => {
+      const col = i % cols
+      const row = Math.floor(i / cols)
+      const jx = (seed(p.playerId) - 0.5) * cellW * SCATTER_JITTER
+      const jy = (seed(p.playerId + '#y') - 0.5) * cellH * SCATTER_JITTER
+      return {
+        ...p,
+        leftPct: Math.min(92, Math.max(8, (col + 0.5) * cellW + jx)),
+        topPct: SCATTER_TOP_PCT + (row + 0.5) * cellH + jy,
+      }
+    })
+
+    return { ...section, tint: sectionIdx + 1, players: scattered }
+  })
+})
+
+/** Section boss HP for the on-floor chip. `enemyHp` is blank until the first
+ *  hit lands, so it falls back to an em dash rather than rendering "/150". */
+function hpText(c: { enemyHp: string | number; enemyMaxHp: string | number }): string {
+  const hp = c.enemyHp === '' || c.enemyHp === null ? '—' : c.enemyHp
+  return c.enemyMaxHp === '' ? `${hp}` : `${hp}/${c.enemyMaxHp}`
+}
+
 const dangerZoneStyle = computed(() => {
   const dmgZone = Number(activeCampaign.value?.enemyDmgZone ?? 16.75)
   if (selectedCampaignId.value === 'c4') {
@@ -271,7 +343,7 @@ const dangerZoneStyle = computed(() => {
         .dungeon-selector
           select(v-model="selectedCampaignId")
             option(v-for="c in visibleCampaigns" :key="c.id" :value="c.id") {{ c.name }}
-        .enemy-section(v-if="activeCampaign")
+        .enemy-section(v-if="activeCampaign && !isC6")
           .enemy-section-header(@click="enemyCollapsed = !enemyCollapsed")
             span.enemy-section-label ENEMY
             span.material-icons.collapse-icon {{ enemyCollapsed ? 'expand_more' : 'expand_less' }}
@@ -364,7 +436,34 @@ const dangerZoneStyle = computed(() => {
                               .item-slot-tooltip(v-if="itemEffectByNo.get(p.itemSlot2)") {{ itemEffectByNo.get(p.itemSlot2) }}
                             span.item-slot-empty(v-else) [ ... ]
       .main-content
-        .dungeon-floor(:class="{ ocean: selectedCampaignId === 'c3', forest: selectedCampaignId === 'c4' }")
+        .dungeon-floor.sectioned(v-if="isC6")
+          .dgn-section(
+            v-for="section in c6SectionsWithPlayers"
+            :key="section.id"
+            :class="[`tint-${section.tint}`, { 'is-dimmed': hoveredSection !== null && hoveredSection !== section.id }]"
+            @mouseenter="hoveredSection = section.id"
+            @mouseleave="hoveredSection = null"
+          )
+            .section-label {{ section.campaign.theme }}
+            .section-players
+              .player-token(
+                v-for="p in section.players"
+                :key="p.playerId"
+                :style="{ left: p.leftPct + '%', top: p.topPct + '%' }"
+                :class="{ 'is-highlighted': hoveredPlayerId === p.playerId, 'is-dimmed': hoveredPlayerId !== null && hoveredPlayerId !== p.playerId }"
+                :title="p.charName"
+              )
+                img.player-avatar(:src="avatarSrc(p.img)" :alt="p.charName")
+            .section-boss-block
+              img.section-boss(
+                v-if="section.campaign.enemyImg"
+                :src="enemySrc(section.campaign.enemyImg)"
+                :alt="section.campaign.enemy"
+              )
+              .section-hp(:title="section.campaign.enemy")
+                span.section-hp-label HP
+                span.section-hp-value {{ hpText(section.campaign) }}
+        .dungeon-floor(v-else :class="{ ocean: selectedCampaignId === 'c3', forest: selectedCampaignId === 'c4' }")
           .danger-zone(:style="dangerZoneStyle")
           .enemy-buffer
           img.enemy-img(v-if="activeCampaign && enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy" :style="{ left: enemyLeft, top: selectedCampaignId === 'c4' ? '50%' : '75%' }")
@@ -853,6 +952,146 @@ td.col-name {
     background-blend-mode: multiply;
     background-size: 20% auto;
     opacity: 0.75;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Campaign 6 — five tinted bands over the shared stone texture. Each band owns
+// its boss and its players; no shared horizontal track.
+// ---------------------------------------------------------------------------
+.dungeon-floor.sectioned {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+
+  .dgn-section {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    transition: opacity 0.2s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--section-tint);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    & + .dgn-section {
+      border-left: 1px solid rgba(0, 0, 0, 0.35);
+    }
+
+    &.is-dimmed {
+      opacity: 0.45;
+    }
+
+    // Castle, cave, ocean, jungle, volcano.
+    &.tint-1 {
+      --section-tint: rgba(96, 92, 130, 0.55);
+    }
+    &.tint-2 {
+      --section-tint: rgba(122, 86, 48, 0.55);
+    }
+    &.tint-3 {
+      --section-tint: rgba(26, 74, 122, 0.6);
+    }
+    &.tint-4 {
+      --section-tint: rgba(42, 92, 26, 0.6);
+    }
+    &.tint-5 {
+      --section-tint: rgba(150, 52, 24, 0.55);
+    }
+  }
+
+  .section-label {
+    position: absolute;
+    top: 0.35rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  // Inset by roughly half an avatar so a token centred at 0% or 100% still
+  // lands inside its own band rather than bleeding into the neighbouring one.
+  .section-players {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: clamp(0.9rem, 3vh, 2rem);
+    right: clamp(0.9rem, 3vh, 2rem);
+    z-index: 5;
+  }
+
+  // The shared .player-token only translates on Y, which would anchor the
+  // avatar's left edge to left%. Sections need it centred.
+  .player-token {
+    transform: translate(-50%, -50%);
+
+    &.is-highlighted {
+      transform: translate(-50%, -50%) scale(1.25);
+    }
+  }
+
+  // Boss and its HP chip sit together at the foot of the band.
+  // Boss + chip are centred as one unit, so a wide boss would otherwise shove
+  // the chip past the band edge. Cap the pair and let the art shrink instead.
+  .section-boss-block {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 100%;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.3rem;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .section-boss {
+    height: clamp(3rem, 13vh, 7rem);
+    width: auto;
+    min-width: 0;
+    flex: 0 1 auto;
+    object-fit: contain;
+  }
+
+  .section-hp {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+    margin-bottom: 0.4rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.45);
+    font-family: 'Space Grotesk', sans-serif;
+    white-space: nowrap;
+  }
+
+  .section-hp-label {
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .section-hp-value {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #fff;
   }
 }
 
@@ -1384,6 +1623,7 @@ td.col-name {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 0.75rem;
   font-size: 0.8rem;
   border-bottom: 1px solid var(--theme-col-parchment-dark);
   padding-bottom: 0.2rem;
@@ -1399,6 +1639,7 @@ td.col-name {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 
 .en-value {
@@ -1412,4 +1653,5 @@ td.col-name {
   font-family: 'Space Grotesk', sans-serif;
   color: var(--theme-col-dark-red);
 }
+
 </style>

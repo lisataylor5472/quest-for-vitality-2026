@@ -55,11 +55,13 @@ export const useGameStore = defineStore('game', () => {
   const cmpgn3 = ref<CampaignProgress[]>([])
   const cmpgn4 = ref<CampaignProgress[]>([])
   const cmpgn5 = ref<CampaignProgress[]>([])
+  const cmpgn6 = ref<CampaignProgress[]>([])
   const plyrActivity = ref<PlayerActivity[]>([])
   const plyrActivity2 = ref<PlayerActivity[]>([])
   const plyrActivity3 = ref<PlayerActivity[]>([])
   const plyrActivity4 = ref<PlayerActivity[]>([])
   const plyrActivity5 = ref<PlayerActivity[]>([])
+  const plyrActivity6 = ref<PlayerActivity[]>([])
   const achievements = ref<Achievement[]>([])
   const dungeonElements = ref<DungeonElement[]>([])
   const items = ref<GameItem[]>([])
@@ -156,6 +158,55 @@ export const useGameStore = defineStore('game', () => {
     return map
   })
 
+  const cmpgn6ByPlayer = computed<Map<string, CampaignProgress>>(() => {
+    const map = new Map<string, CampaignProgress>()
+    for (const row of cmpgn6.value) {
+      if (row.playerId) map.set(row.playerId, row)
+    }
+    return map
+  })
+
+  /**
+   * Campaign 6 splits the dungeon floor into five sections, one per previous
+   * boss. Section rows live in `campaigns` as "c6-1".."c6-5" and carry only
+   * enemy data — no dates — so they are excluded from the campaign selectors,
+   * which filter on `start`. Ordered left-to-right by section number, which
+   * matches c1–c5 chronological order.
+   */
+  const c6Sections = computed(() =>
+    campaigns.value
+      .filter((c) => /^c6-\d+$/.test(c.id))
+      .sort((a, b) => Number(a.id.slice(3)) - Number(b.id.slice(3)))
+      .map((c) => ({ id: c.id, campaign: c })),
+  )
+
+  /**
+   * Map<playerId, sectionId> — which section boss each c6 player is facing.
+   *
+   * `cmpgn6.dgnType` names the section by theme ("Strength"), matched against
+   * the section rows' own `theme`. Earlier rows used the campaign id form
+   * ("c1".."c5"), which still resolves so legacy rows keep working.
+   */
+  const cmpgn6SectionByPlayer = computed<Map<string, string>>(() => {
+    const norm = (v: string) => v.trim().toLowerCase()
+
+    const byTheme = new Map<string, string>()
+    for (const section of c6Sections.value) {
+      const theme = section.campaign.theme
+      if (theme) byTheme.set(norm(theme), section.id)
+    }
+
+    const map = new Map<string, string>()
+    for (const row of cmpgn6.value) {
+      if (!row.playerId || !row.dgnType) continue
+      const raw = String(row.dgnType).trim()
+      const legacy = raw.match(/^c([1-5])$/i)
+      const sectionId = legacy ? `c6-${legacy[1]}` : byTheme.get(norm(raw))
+      if (sectionId) map.set(row.playerId, sectionId)
+    }
+    return map
+  })
+
   /**
    * Campaign 4 dungeon progress computed from activity gaps.
    * Each calendar day from campaign start to today (or end) where the player
@@ -217,11 +268,13 @@ export const useGameStore = defineStore('game', () => {
       cmpgn3.value = data.cmpgn3 ?? []
       cmpgn4.value = data.cmpgn4 ?? []
       cmpgn5.value = data.cmpgn5 ?? []
+      cmpgn6.value = data.cmpgn6 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
       plyrActivity4.value = data.plyrActivity4 ?? []
       plyrActivity5.value = data.plyrActivity5 ?? []
+      plyrActivity6.value = data.plyrActivity6 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -248,11 +301,13 @@ export const useGameStore = defineStore('game', () => {
       cmpgn3.value = data.cmpgn3 ?? []
       cmpgn4.value = data.cmpgn4 ?? []
       cmpgn5.value = data.cmpgn5 ?? []
+      cmpgn6.value = data.cmpgn6 ?? []
       plyrActivity.value = data.plyrActivity
       plyrActivity2.value = data.plyrActivity2 ?? []
       plyrActivity3.value = data.plyrActivity3 ?? []
       plyrActivity4.value = data.plyrActivity4 ?? []
       plyrActivity5.value = data.plyrActivity5 ?? []
+      plyrActivity6.value = data.plyrActivity6 ?? []
       achievements.value = data.achievements
       dungeonElements.value = data.dungeonElements ?? []
       items.value = data.items ?? []
@@ -276,11 +331,13 @@ export const useGameStore = defineStore('game', () => {
     cmpgn3,
     cmpgn4,
     cmpgn5,
+    cmpgn6,
     plyrActivity,
     plyrActivity2,
     plyrActivity3,
     plyrActivity4,
     plyrActivity5,
+    plyrActivity6,
     achievements,
     dungeonElements,
     items,
@@ -297,6 +354,9 @@ export const useGameStore = defineStore('game', () => {
     cmpgn3ByPlayer,
     cmpgn4ByPlayer,
     cmpgn5ByPlayer,
+    cmpgn6ByPlayer,
+    cmpgn6SectionByPlayer,
+    c6Sections,
     cmpgn4DgnProgressByPlayer,
     pendingRoll,
     sneakAttack,

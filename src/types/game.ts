@@ -99,6 +99,8 @@ export interface Player {
 export interface CampaignProgress {
   playerId: string
   realName: string
+  /** c6 only — which section boss ("c1"–"c5") this player is assigned to. */
+  dgnType?: string
   dgnProgress: number
   cmpgnProgress: number
   success: number
@@ -167,11 +169,13 @@ export interface ApiResponse {
   cmpgn3: CampaignProgress[]
   cmpgn4: CampaignProgress[]
   cmpgn5: CampaignProgress[]
+  cmpgn6: CampaignProgress[]
   plyrActivity: PlayerActivity[]
   plyrActivity2: PlayerActivity[]
   plyrActivity3: PlayerActivity[]
   plyrActivity4: PlayerActivity[]
   plyrActivity5: PlayerActivity[]
+  plyrActivity6: PlayerActivity[]
   dungeonElements: DungeonElement[]
   items: GameItem[]
   initiativeOrder: InitiativeOrder[]

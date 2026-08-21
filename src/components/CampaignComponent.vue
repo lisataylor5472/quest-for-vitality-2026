@@ -105,9 +105,19 @@ function sortIcon(key: SortKey) {
 // ---------------------------------------------------------------------------
 // Campaign selection toggle
 // ---------------------------------------------------------------------------
-const selectedCampaignId = ref<'c1' | 'c2' | 'c3' | 'c4' | 'c5'>(
-  (store.gameState?.currentCmpgn as 'c1' | 'c2' | 'c3' | 'c4' | 'c5') ?? 'c5',
-)
+type CampaignId = 'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6'
+const CAMPAIGN_IDS: CampaignId[] = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6']
+
+/** `currentCmpgn` is "#N/A" between campaigns, so it needs validating rather
+ *  than a bare nullish fallback. */
+function initialCampaignId(): CampaignId {
+  const current = store.gameState?.currentCmpgn as CampaignId | undefined
+  return current && CAMPAIGN_IDS.includes(current) ? current : 'c6'
+}
+
+const selectedCampaignId = ref<CampaignId>(initialCampaignId())
+
+const isC6 = computed(() => selectedCampaignId.value === 'c6')
 
 // ---------------------------------------------------------------------------
 // Activity tracker — selected campaign date range + per-player activity sets
@@ -152,15 +162,17 @@ function formatDayTooltip(isoDate: string): string {
  *  Normalizes to YYYY-MM-DD in case activeDay is a full ISO datetime string. */
 const activitySetByPlayer = computed<Map<string, Set<string>>>(() => {
   const source =
-    selectedCampaignId.value === 'c5'
-      ? store.plyrActivity5
-      : selectedCampaignId.value === 'c4'
-        ? store.plyrActivity4
-        : selectedCampaignId.value === 'c3'
-          ? store.plyrActivity3
-          : selectedCampaignId.value === 'c2'
-            ? store.plyrActivity2
-            : store.plyrActivity
+    selectedCampaignId.value === 'c6'
+      ? store.plyrActivity6
+      : selectedCampaignId.value === 'c5'
+        ? store.plyrActivity5
+        : selectedCampaignId.value === 'c4'
+          ? store.plyrActivity4
+          : selectedCampaignId.value === 'c3'
+            ? store.plyrActivity3
+            : selectedCampaignId.value === 'c2'
+              ? store.plyrActivity2
+              : store.plyrActivity
   const map = new Map<string, Set<string>>()
   for (const entry of source) {
     if (!entry.playerId || !entry.activeDay) continue
@@ -204,15 +216,17 @@ const restedByPlayer = computed<Map<string, number>>(() => {
 // ---------------------------------------------------------------------------
 const displayedRows = computed(() => {
   const byPlayer =
-    selectedCampaignId.value === 'c5'
-      ? store.cmpgn5ByPlayer
-      : selectedCampaignId.value === 'c4'
-        ? store.cmpgn4ByPlayer
-        : selectedCampaignId.value === 'c3'
-          ? store.cmpgn3ByPlayer
-          : selectedCampaignId.value === 'c2'
-            ? store.cmpgn2ByPlayer
-            : store.cmpgn1ByPlayer
+    selectedCampaignId.value === 'c6'
+      ? store.cmpgn6ByPlayer
+      : selectedCampaignId.value === 'c5'
+        ? store.cmpgn5ByPlayer
+        : selectedCampaignId.value === 'c4'
+          ? store.cmpgn4ByPlayer
+          : selectedCampaignId.value === 'c3'
+            ? store.cmpgn3ByPlayer
+            : selectedCampaignId.value === 'c2'
+              ? store.cmpgn2ByPlayer
+              : store.cmpgn1ByPlayer
   const rows = store.players
     .filter((player) => byPlayer.has(player.playerId))
     .map((player) => {
@@ -262,8 +276,10 @@ const displayedRows = computed(() => {
           :class="{ active: selectedCampaignId === 'c5' }"
           @click="selectedCampaignId = 'c5'"
         ) strength
-        button.active.c6
-          span.material-icons hourglass_empty
+        button.c6(
+          :class="{ active: selectedCampaignId === 'c6' }"
+          @click="selectedCampaignId = 'c6'"
+        ) redemption
     .main-row
       .side-panel
         .quest-info-wrapper(v-if="activeCampaign")
@@ -279,22 +295,25 @@ const displayedRows = computed(() => {
             //- .qi-row
             //-   span.qi-label Days
             //-   span.qi-value {{ activeCampaign.days }}
-            .qi-row.qi-row--stacked
-              span.qi-label Quest
-              span.qi-value {{ activeCampaign.questAction }}
-            .qi-row
-              span.qi-label Times Per week
-              span.qi-value {{ activeCampaign.timesPerWeek }}x
+            template(v-if="isC6")
+              .qi-section(v-for="section in store.c6Sections" :key="section.id")
+                span.qi-section-theme {{ section.campaign.theme }}
+                span.qi-section-quest {{ section.campaign.questAction }}
+                span.qi-section-freq {{ section.campaign.timesPerWeek }}x per week
+            template(v-else)
+              .qi-row.qi-row--stacked
+                span.qi-label Quest
+                span.qi-value {{ activeCampaign.questAction }}
+              .qi-row
+                span.qi-label Times Per week
+                span.qi-value {{ activeCampaign.timesPerWeek }}x
             .qi-row.qi-row--stacked
               span.qi-label Reward
               span.qi-value {{ activeCampaign.reward }}
               span.qi-desc(v-if="activeCampaign.rewardDesc") {{ activeCampaign.rewardDesc }}
             .qi-enemy-block
-              img.qi-enemy-img(v-if="enemyRevealed" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy")
-            .qi-row
-              span.qi-label Threat
-              span.qi-value {{ enemyRevealed ? activeCampaign.enemy : '???' }}
-            .qi-row
+              img.qi-enemy-img(v-if="enemyRevealed && activeCampaign.enemyImg" :src="enemySrc(activeCampaign.enemyImg)" :alt="activeCampaign.enemy")
+            .qi-row(v-if="activeCampaign.enemyMaxHp !== ''")
               span.qi-label HP
               span.qi-value {{ activeCampaign.enemyHp }}/{{ activeCampaign.enemyMaxHp }}
               //- .qi-enemy-stats
@@ -429,6 +448,43 @@ const displayedRows = computed(() => {
 .side-panel {
   flex: 0 0 20%;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// c6 lists all five dungeon types instead of one quest, so each needs to read
+// as its own compact block rather than a label/value row.
+.qi-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--theme-col-parchment-dark);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.qi-section-theme {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--theme-col-brown-light);
+}
+
+.qi-section-quest {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: var(--theme-col-brown);
+}
+
+.qi-section-freq {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--theme-col-brown-light);
 }
 
 .quest-info-wrapper {
@@ -437,6 +493,7 @@ const displayedRows = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
   font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -475,6 +532,8 @@ const displayedRows = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .qi-row {

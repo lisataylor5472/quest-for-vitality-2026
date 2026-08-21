@@ -94,7 +94,7 @@ onUnmounted(() => {
             img.flag-unrolled(v-if="true" src="@/assets/flags/strength-flag.svg")
             img(v-else src="@/assets/flags/rolled-flag-strength.svg" alt="Future Dungeon Flag")
           .adventure-flag
-            img.flag-unrolled(v-if="false" src="@/assets/flags/final-flag.svg")
+            img.flag-unrolled(v-if="true" src="@/assets/flags/cyoa.svg")
             img(v-else src="@/assets/flags/rolled-flag-final.svg" alt="Future Dungeon Flag")
   .nav-button-wrapper
     button.refresh-btn(@click="handleQuietRefresh" :class="{ spinning: refreshing }" data-tooltip="Refresh data" data-tooltip-pos="below")
