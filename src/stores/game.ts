@@ -8,7 +8,9 @@ import type {
   CampaignProgress,
   DashboardEntry,
   ClassInfo,
+  DungeonActivity,
   DungeonElement,
+  DungeonMechanic,
   GameItem,
   InitiativeOrder,
   Player,
@@ -42,14 +44,59 @@ function enrichClassInfo(raw: ClassInfo[]): ClassInfo[] {
   })
 }
 
+const norm = (v: unknown) => String(v ?? '').trim().toLowerCase()
+
+/**
+ * Applies a dungeon activity log on top of baseline players/campaigns.
+ * Each row is a discrete action (a player who acted twice has two rows), so
+ * effects are summed, not overwritten. Returns fresh copies — never mutates
+ * the baseline, so this can be safely re-run from scratch on every refresh.
+ */
+function applyDungeonActivity(basePlayers: Player[], baseCampaigns: Campaign[], activity: DungeonActivity[]) {
+  const players = basePlayers.map((p) => ({ ...p }))
+  const campaigns = baseCampaigns.map((c) => ({ ...c }))
+  const playerById = new Map(players.map((p) => [p.playerId, p]))
+
+  const findBossSection = (boss: string | undefined) => {
+    const target = norm(boss)
+    if (!target) return undefined
+    // `boss` holds a short nickname (e.g. "Rigidus"), matched against the
+    // section's full enemy name (e.g. "Ser Rigidus Invictus").
+    return campaigns.find((c) => /^c6-\d+$/.test(c.id) && norm(c.enemy).includes(target))
+  }
+
+  for (const row of activity) {
+    const player = playerById.get(row.player)
+
+    const useAP = Number(row.useAP)
+    if (player && useAP) player.actionPoints -= useAP
+
+    const hp = Number(row.hp)
+    if (player && hp < 0) player.hp += hp
+
+    const bossDamage = Number(row.bossDamage)
+    if (bossDamage) {
+      const section = findBossSection(row.boss)
+      if (section) section.enemyHp = Number(section.enemyHp || 0) - bossDamage
+    }
+  }
+
+  return { players, campaigns }
+}
+
 export const useGameStore = defineStore('game', () => {
   // ---------------------------------------------------------------------------
   // Raw state — mirrors the API response 1-to-1
   // ---------------------------------------------------------------------------
   const dashboard = ref<DashboardEntry[]>([])
   const classInfo = ref<ClassInfo[]>([])
-  const campaigns = ref<Campaign[]>([])
-  const players = ref<Player[]>([])
+  const baseCampaigns = ref<Campaign[]>([])
+  const basePlayers = ref<Player[]>([])
+  /** Historical dungeon activity, as of the last full snapshot pull. */
+  const dungeonActivityHistory = ref<DungeonActivity[]>([])
+  /** Today's dungeon activity, re-fetched live from the sheet on every refresh. */
+  const liveDungeonActivity = ref<DungeonActivity[]>([])
+  const dungeonMechanics = ref<DungeonMechanic[]>([])
   const cmpgn1 = ref<CampaignProgress[]>([])
   const cmpgn2 = ref<CampaignProgress[]>([])
   const cmpgn3 = ref<CampaignProgress[]>([])
@@ -75,6 +122,14 @@ export const useGameStore = defineStore('game', () => {
   // ---------------------------------------------------------------------------
   // Getters
   // ---------------------------------------------------------------------------
+
+  /** Baseline players/campaigns with today's live dungeon activity applied. */
+  const withLiveActivity = computed(() =>
+    applyDungeonActivity(basePlayers.value, baseCampaigns.value, liveDungeonActivity.value),
+  )
+  const players = computed(() => withLiveActivity.value.players)
+  const campaigns = computed(() => withLiveActivity.value.campaigns)
+  const dungeonActivity = computed(() => [...dungeonActivityHistory.value, ...liveDungeonActivity.value])
 
   /** Global game state — currentDate, currentCmpgn, cmpgnWeek live on row 0. */
   const gameState = computed(() => dashboard.value[0] ?? null)
@@ -252,38 +307,66 @@ export const useGameStore = defineStore('game', () => {
   // Actions
   // ---------------------------------------------------------------------------
 
+  /**
+   * Pulls today's dungeon activity straight from the live sheet (bypassing the
+   * static snapshot) and replaces `liveDungeonActivity` wholesale. It's a full
+   * re-fetch each time, not an append, so re-running it (e.g. clicking refresh
+   * repeatedly) stays correct — `withLiveActivity` re-derives players/campaigns
+   * from the baseline every time rather than layering deltas on deltas.
+   */
+  async function fetchLiveDungeonActivity() {
+    const apiUrl = import.meta.env.VITE_API_URL
+    if (!apiUrl) return
+    try {
+      const res = await fetch(apiUrl)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: Pick<ApiResponse, 'dungeonActivity' | 'dungeonMechanics'> = await res.json()
+      liveDungeonActivity.value = data.dungeonActivity ?? []
+      if (data.dungeonMechanics) dungeonMechanics.value = data.dungeonMechanics
+    } catch (e) {
+      // Best-effort — keep whatever live activity we already had on failure.
+      console.error('Failed to pull live dungeon activity', e)
+    }
+  }
+
+  function applySnapshot(data: ApiResponse) {
+    dashboard.value = data.dashboard
+    classInfo.value = enrichClassInfo(data.classInfo)
+    baseCampaigns.value = data.campaigns
+    basePlayers.value = data.players.filter((p) => !!p.playerId)
+    dungeonActivityHistory.value = data.dungeonActivity ?? []
+    dungeonMechanics.value = data.dungeonMechanics ?? []
+    cmpgn1.value = data.cmpgn1
+    cmpgn2.value = data.cmpgn2 ?? []
+    cmpgn3.value = data.cmpgn3 ?? []
+    cmpgn4.value = data.cmpgn4 ?? []
+    cmpgn5.value = data.cmpgn5 ?? []
+    cmpgn6.value = data.cmpgn6 ?? []
+    plyrActivity.value = data.plyrActivity
+    plyrActivity2.value = data.plyrActivity2 ?? []
+    plyrActivity3.value = data.plyrActivity3 ?? []
+    plyrActivity4.value = data.plyrActivity4 ?? []
+    plyrActivity5.value = data.plyrActivity5 ?? []
+    plyrActivity6.value = data.plyrActivity6 ?? []
+    achievements.value = data.achievements
+    dungeonElements.value = data.dungeonElements ?? []
+    items.value = data.items ?? []
+    initiativeOrder.value = data.initiativeOrder ?? []
+  }
+
   async function fetchData() {
     loading.value = true
     error.value = null
     try {
       const res = await fetch('/data.json')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: ApiResponse = await res.json()
-      dashboard.value = data.dashboard
-      classInfo.value = enrichClassInfo(data.classInfo)
-      campaigns.value = data.campaigns
-      players.value = data.players.filter((p) => !!p.playerId)
-      cmpgn1.value = data.cmpgn1
-      cmpgn2.value = data.cmpgn2 ?? []
-      cmpgn3.value = data.cmpgn3 ?? []
-      cmpgn4.value = data.cmpgn4 ?? []
-      cmpgn5.value = data.cmpgn5 ?? []
-      cmpgn6.value = data.cmpgn6 ?? []
-      plyrActivity.value = data.plyrActivity
-      plyrActivity2.value = data.plyrActivity2 ?? []
-      plyrActivity3.value = data.plyrActivity3 ?? []
-      plyrActivity4.value = data.plyrActivity4 ?? []
-      plyrActivity5.value = data.plyrActivity5 ?? []
-      plyrActivity6.value = data.plyrActivity6 ?? []
-      achievements.value = data.achievements
-      dungeonElements.value = data.dungeonElements ?? []
-      items.value = data.items ?? []
-      initiativeOrder.value = data.initiativeOrder ?? []
+      applySnapshot(await res.json())
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch data'
     } finally {
       loading.value = false
     }
+    await fetchLiveDungeonActivity()
   }
 
   async function quietRefresh() {
@@ -291,30 +374,11 @@ export const useGameStore = defineStore('game', () => {
     try {
       const res = await fetch('/data.json')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: ApiResponse = await res.json()
-      dashboard.value = data.dashboard
-      classInfo.value = enrichClassInfo(data.classInfo)
-      campaigns.value = data.campaigns
-      players.value = data.players.filter((p) => !!p.playerId)
-      cmpgn1.value = data.cmpgn1
-      cmpgn2.value = data.cmpgn2 ?? []
-      cmpgn3.value = data.cmpgn3 ?? []
-      cmpgn4.value = data.cmpgn4 ?? []
-      cmpgn5.value = data.cmpgn5 ?? []
-      cmpgn6.value = data.cmpgn6 ?? []
-      plyrActivity.value = data.plyrActivity
-      plyrActivity2.value = data.plyrActivity2 ?? []
-      plyrActivity3.value = data.plyrActivity3 ?? []
-      plyrActivity4.value = data.plyrActivity4 ?? []
-      plyrActivity5.value = data.plyrActivity5 ?? []
-      plyrActivity6.value = data.plyrActivity6 ?? []
-      achievements.value = data.achievements
-      dungeonElements.value = data.dungeonElements ?? []
-      items.value = data.items ?? []
-      initiativeOrder.value = data.initiativeOrder ?? []
+      applySnapshot(await res.json())
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch data'
     }
+    await fetchLiveDungeonActivity()
   }
 
   // ---------------------------------------------------------------------------
@@ -342,6 +406,8 @@ export const useGameStore = defineStore('game', () => {
     dungeonElements,
     items,
     initiativeOrder,
+    dungeonActivity,
+    dungeonMechanics,
     loading,
     error,
     // computed

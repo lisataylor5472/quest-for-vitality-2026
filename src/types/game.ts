@@ -158,6 +158,35 @@ export interface InitiativeOrder {
   playerId: string
 }
 
+// One row per dungeon action. A player who acts more than once in a day gets
+// one row per action (not a running total) — effects are summed per player.
+export interface DungeonActivity {
+  date: string // ISO date string, or "" for padding rows
+  player: string // Slack playerId, or "" for padding rows
+  playerName: string
+  characterName: string
+  useAP: number | string // AP spent on this action, or ""
+  hp: number | string // HP delta from this action (negative = damage taken), or ""
+  bossSpeed: number | string
+  bossDamage: number | string // damage dealt to `boss` by this action, or ""
+  boss?: string // short name matching a c6 section's enemy (e.g. "Rigidus"), or ""
+  bossProgress: number | string
+  hitByBoss: boolean
+  ability: string
+  searchChest: boolean
+  revealChests: boolean
+  revealChestContents: boolean
+  gainItem: string
+  gainBossLoot: string
+  notes: string
+}
+
+export interface DungeonMechanic {
+  nearby: string
+  'within 10% on either side of player': string
+  '': string
+}
+
 export interface ApiResponse {
   dashboard: DashboardEntry[]
   classInfo: ClassInfo[]
@@ -179,4 +208,6 @@ export interface ApiResponse {
   dungeonElements: DungeonElement[]
   items: GameItem[]
   initiativeOrder: InitiativeOrder[]
+  dungeonActivity?: DungeonActivity[]
+  dungeonMechanics?: DungeonMechanic[]
 }
