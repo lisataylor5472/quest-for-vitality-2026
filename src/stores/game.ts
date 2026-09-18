@@ -256,7 +256,7 @@ export const useGameStore = defineStore('game', () => {
     loading.value = true
     error.value = null
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL)
+      const res = await fetch('/data.json')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: ApiResponse = await res.json()
       dashboard.value = data.dashboard
@@ -289,7 +289,7 @@ export const useGameStore = defineStore('game', () => {
   async function quietRefresh() {
     error.value = null
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL)
+      const res = await fetch('/data.json')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data: ApiResponse = await res.json()
       dashboard.value = data.dashboard
